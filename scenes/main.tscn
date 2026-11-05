@@ -1,0 +1,137 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/arena.gd" id="1_arena"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/training_target.tscn" id="3_target"]
+[ext_resource type="PackedScene" path="res://scenes/melee_enemy.tscn" id="4_melee"]
+[ext_resource type="PackedScene" path="res://scenes/ranged_enemy.tscn" id="5_ranged"]
+
+[sub_resource type="SegmentShape2D" id="Segment_top_left"]
+a = Vector2(-540, 0)
+b = Vector2(0, -300)
+
+[sub_resource type="SegmentShape2D" id="Segment_top_right"]
+a = Vector2(0, -300)
+b = Vector2(540, 0)
+
+[sub_resource type="SegmentShape2D" id="Segment_bottom_right"]
+a = Vector2(540, 0)
+b = Vector2(0, 300)
+
+[sub_resource type="SegmentShape2D" id="Segment_bottom_left"]
+a = Vector2(0, 300)
+b = Vector2(-540, 0)
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_arena")
+
+[node name="ArenaLimits" type="StaticBody2D" parent="."]
+collision_layer = 1
+collision_mask = 1
+
+[node name="TopLeft" type="CollisionShape2D" parent="ArenaLimits"]
+shape = SubResource("Segment_top_left")
+
+[node name="TopRight" type="CollisionShape2D" parent="ArenaLimits"]
+shape = SubResource("Segment_top_right")
+
+[node name="BottomRight" type="CollisionShape2D" parent="ArenaLimits"]
+shape = SubResource("Segment_bottom_right")
+
+[node name="BottomLeft" type="CollisionShape2D" parent="ArenaLimits"]
+shape = SubResource("Segment_bottom_left")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+
+[node name="TrainingTarget" parent="." instance=ExtResource("3_target")]
+position = Vector2(0, 220)
+
+[node name="MeleeEnemy" parent="." instance=ExtResource("4_melee")]
+position = Vector2(-300, -20)
+
+[node name="RangedEnemy" parent="." instance=ExtResource("5_ranged")]
+position = Vector2(300, -40)
+
+[node name="Audio" type="Node" parent="."]
+
+[node name="Hit" type="AudioStreamPlayer" parent="Audio"]
+volume_db = -12.0
+
+[node name="Damage" type="AudioStreamPlayer" parent="Audio"]
+volume_db = -11.0
+
+[node name="Dodge" type="AudioStreamPlayer" parent="Audio"]
+volume_db = -15.0
+
+[node name="Result" type="AudioStreamPlayer" parent="Audio"]
+volume_db = -13.0
+
+[node name="Interface" type="CanvasLayer" parent="."]
+
+[node name="Phase" type="Label" parent="Interface"]
+offset_left = 24.0
+offset_top = 20.0
+offset_right = 420.0
+offset_bottom = 54.0
+theme_override_colors/font_color = Color(0.2, 1, 0.85, 1)
+theme_override_font_sizes/font_size = 22
+text = "DÍVIDA FANTASMA — FASE 6"
+
+[node name="Instructions" type="Label" parent="Interface"]
+offset_left = 24.0
+offset_top = 56.0
+offset_right = 900.0
+offset_bottom = 88.0
+theme_override_colors/font_color = Color(0.78, 0.83, 0.92, 1)
+theme_override_font_sizes/font_size = 17
+text = "Mover: WASD  •  Atacar: clique/Espaço  •  Esquivar: Shift ou Ctrl"
+
+[node name="Health" type="Label" parent="Interface"]
+offset_left = 24.0
+offset_top = 92.0
+offset_right = 440.0
+offset_bottom = 128.0
+theme_override_colors/font_color = Color(1, 0.35, 0.55, 1)
+theme_override_font_sizes/font_size = 22
+text = "MEMÓRIA  ◆◆◆◆◆"
+
+[node name="ResultOverlay" type="Control" parent="Interface"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="Shade" type="ColorRect" parent="Interface/ResultOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.015, 0.02, 0.055, 0.82)
+
+[node name="ResultTitle" type="Label" parent="Interface/ResultOverlay"]
+layout_mode = 0
+offset_left = 300.0
+offset_top = 285.0
+offset_right = 980.0
+offset_bottom = 345.0
+theme_override_colors/font_color = Color(0.18, 1, 0.84, 1)
+theme_override_font_sizes/font_size = 34
+text = "MEMÓRIAS RECUPERADAS"
+horizontal_alignment = 1
+
+[node name="RestartHint" type="Label" parent="Interface/ResultOverlay"]
+layout_mode = 0
+offset_left = 390.0
+offset_top = 360.0
+offset_right = 890.0
+offset_bottom = 405.0
+theme_override_colors/font_color = Color(0.78, 0.83, 0.92, 1)
+theme_override_font_sizes/font_size = 20
+text = "Pressione R para iniciar uma nova tentativa"
+horizontal_alignment = 1

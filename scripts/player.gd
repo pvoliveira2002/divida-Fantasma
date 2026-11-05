@@ -1,0 +1,238 @@
+extends CharacterBody2D
+
+signal died
+signal health_changed(current: int, maximum: int)
+signal attack_landed(world_position: Vector2)
+signal player_damaged
+signal dodge_started
+
+enum AttackState {
+	READY,
+	WINDUP,
+	ACTIVE,
+	RECOVERY,
+}
+
+@export_category("Movimento")
+@export var move_speed: float = 300.0
+@export var acceleration: float = 2200.0
+@export var deceleration: float = 2800.0
+
+@export_category("Vida")
+@export var max_health: int = 5
+
+@export_category("Ataque básico")
+@export var attack_damage: int = 1
+@export var windup_duration: float = 0.07
+@export var active_duration: float = 0.10
+@export var recovery_duration: float = 0.20
+
+@export_category("Esquiva")
+@export var dodge_speed: float = 820.0
+@export var dodge_duration: float = 0.16
+@export var dodge_cooldown: float = 0.55
+@export var dodge_grants_invulnerability: bool = true
+
+@onready var attack_area: Area2D = $AttackArea
+@onready var attack_collision: CollisionShape2D = $AttackArea/CollisionShape2D
+
+var facing_direction := Vector2.DOWN
+var attack_state := AttackState.READY
+var attack_time_left := 0.0
+var hit_targets: Array[Node2D] = []
+var is_dodging := false
+var dodge_time_left := 0.0
+var dodge_cooldown_left := 0.0
+var dodge_direction := Vector2.DOWN
+var debug_hits_received := 0
+var damage_flash_left := 0.0
+var current_health: int
+var is_dead := false
+var controls_enabled := true
+
+
+func _ready() -> void:
+	current_health = max_health
+	add_to_group("player")
+	attack_area.area_entered.connect(_on_attack_area_entered)
+	attack_area.body_entered.connect(_on_attack_body_entered)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not controls_enabled or is_dead:
+		return
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			start_attack(get_global_mouse_position() - global_position)
+	elif event is InputEventKey:
+		if event.physical_keycode in [KEY_SHIFT, KEY_CTRL] and event.pressed and not event.echo:
+			var input_direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+			start_dodge(input_direction)
+		elif event.physical_keycode == KEY_SPACE and event.pressed and not event.echo:
+			start_attack(facing_direction)
+
+
+func _physics_process(delta: float) -> void:
+	if is_dead:
+		velocity = Vector2.ZERO
+		return
+	damage_flash_left = maxf(damage_flash_left - delta, 0.0)
+	dodge_cooldown_left = maxf(dodge_cooldown_left - delta, 0.0)
+	_update_attack(delta)
+	_update_dodge(delta)
+
+	if is_dodging:
+		velocity = dodge_direction * dodge_speed
+		move_and_slide()
+		queue_redraw()
+		return
+
+	var input_direction := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	if input_direction != Vector2.ZERO:
+		if attack_state == AttackState.READY:
+			facing_direction = input_direction
+		velocity = velocity.move_toward(input_direction * move_speed, acceleration * delta)
+	else:
+		velocity = velocity.move_toward(Vector2.ZERO, deceleration * delta)
+
+	move_and_slide()
+	queue_redraw()
+
+
+func start_attack(direction: Vector2) -> bool:
+	if not controls_enabled or is_dead or attack_state != AttackState.READY or is_dodging:
+		return false
+
+	if direction.length_squared() > 0.001:
+		facing_direction = direction.normalized()
+
+	attack_state = AttackState.WINDUP
+	attack_time_left = windup_duration
+	attack_area.rotation = facing_direction.angle()
+	hit_targets.clear()
+	queue_redraw()
+	return true
+
+
+func start_dodge(direction: Vector2) -> bool:
+	if not controls_enabled or is_dead or is_dodging or dodge_cooldown_left > 0.0 or attack_state != AttackState.READY:
+		return false
+
+	dodge_direction = direction.normalized() if direction.length_squared() > 0.001 else facing_direction
+	facing_direction = dodge_direction
+	is_dodging = true
+	dodge_time_left = dodge_duration
+	dodge_cooldown_left = dodge_cooldown
+	dodge_started.emit()
+	queue_redraw()
+	return true
+
+
+func is_invulnerable() -> bool:
+	return is_dodging and dodge_grants_invulnerability
+
+
+func receive_enemy_hit(damage: int = 1) -> bool:
+	if is_dead or is_invulnerable():
+		return false
+	debug_hits_received += 1
+	current_health = maxi(current_health - damage, 0)
+	damage_flash_left = 0.16
+	health_changed.emit(current_health, max_health)
+	player_damaged.emit()
+	if current_health == 0:
+		_die()
+	queue_redraw()
+	return true
+
+
+func _die() -> void:
+	is_dead = true
+	controls_enabled = false
+	velocity = Vector2.ZERO
+	attack_collision.set_deferred("disabled", true)
+	died.emit()
+	queue_redraw()
+
+
+func _update_dodge(delta: float) -> void:
+	if not is_dodging:
+		return
+
+	dodge_time_left -= delta
+	if dodge_time_left <= 0.0:
+		is_dodging = false
+		dodge_time_left = 0.0
+		velocity = dodge_direction * move_speed
+		queue_redraw()
+
+
+func _update_attack(delta: float) -> void:
+	if attack_state == AttackState.READY:
+		return
+
+	attack_time_left -= delta
+	if attack_time_left > 0.0:
+		return
+
+	match attack_state:
+		AttackState.WINDUP:
+			attack_state = AttackState.ACTIVE
+			attack_time_left = active_duration
+			attack_collision.set_deferred("disabled", false)
+		AttackState.ACTIVE:
+			attack_state = AttackState.RECOVERY
+			attack_time_left = recovery_duration
+			attack_collision.set_deferred("disabled", true)
+		AttackState.RECOVERY:
+			attack_state = AttackState.READY
+			attack_time_left = 0.0
+	queue_redraw()
+
+
+func _on_attack_area_entered(target: Area2D) -> void:
+	_try_damage_target(target)
+
+
+func _on_attack_body_entered(target: Node2D) -> void:
+	_try_damage_target(target)
+
+
+func _try_damage_target(target: Node2D) -> void:
+	if attack_state != AttackState.ACTIVE or target in hit_targets:
+		return
+
+	hit_targets.append(target)
+	if target.has_method("take_damage"):
+		var damage_applied = target.take_damage(attack_damage, facing_direction)
+		if damage_applied != false:
+			attack_landed.emit(target.global_position)
+
+
+func _draw() -> void:
+	# Formas provisórias: sombra, corpo e indicador da direção atual.
+	draw_set_transform(Vector2(0, 8), 0.0, Vector2(1.0, 0.45))
+	draw_circle(Vector2.ZERO, 24.0, Color(0.0, 0.0, 0.0, 0.35))
+	draw_set_transform(Vector2.ZERO)
+
+	var body := PackedVector2Array([
+		Vector2(0, -25),
+		Vector2(21, 0),
+		Vector2(0, 25),
+		Vector2(-21, 0),
+	])
+	var body_color := Color("4c5366") if is_dead else (Color("ffffff") if damage_flash_left > 0.0 else (Color("38d6ff") if is_dodging else Color("ff3f81")))
+	var outline_color := Color("c2f6ff") if is_dodging else Color("ff9bc2")
+	draw_colored_polygon(body, body_color)
+	draw_polyline(body + PackedVector2Array([body[0]]), outline_color, 3.0, true)
+	draw_line(Vector2.ZERO, facing_direction * 30.0, Color("fff4b0"), 4.0, true)
+	draw_circle(facing_direction * 30.0, 4.0, Color("fff4b0"))
+
+	if attack_state != AttackState.READY:
+		var attack_color := Color("fff4b0") if attack_state == AttackState.ACTIVE else Color(1.0, 0.35, 0.65, 0.55)
+		var direction_angle := facing_direction.angle()
+		draw_arc(Vector2.ZERO, 76.0, direction_angle - 0.48, direction_angle + 0.48, 18, attack_color, 7.0, true)
+
+	if is_dodging:
+		draw_arc(Vector2.ZERO, 34.0, 0.0, TAU, 24, Color("9fffea"), 4.0, true)
+		draw_line(-dodge_direction * 26.0, -dodge_direction * 58.0, Color(0.3, 1.0, 0.85, 0.65), 6.0, true)

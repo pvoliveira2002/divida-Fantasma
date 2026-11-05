@@ -1,0 +1,18 @@
+# Dados gerados pelo Godot
+.godot/
+
+# Engine e dados portáteis locais
+tools/
+export_templates/
+feature_profiles/
+script_templates/
+text_editor_themes/
+
+# Builds
+build/
+
+# Sistema e editor
+.DS_Store
+Thumbs.db
+.vscode/
+

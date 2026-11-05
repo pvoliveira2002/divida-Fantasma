@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/melee_enemy.gd" id="1_melee"]
+
+[sub_resource type="CircleShape2D" id="Circle_melee"]
+radius = 24.0
+
+[node name="MeleeEnemy" type="CharacterBody2D"]
+z_index = 6
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1_melee")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("Circle_melee")
+
