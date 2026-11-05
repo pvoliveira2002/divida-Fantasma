@@ -98,7 +98,9 @@
 - Realizado: os seis testes automatizados das Fases 1 a 6 passaram após a integração visual direcional.
 - Realizado pelo usuário: as quatro poses estáticas do Protagonista 01 foram aprovadas e devem ser preservadas como referência visual das animações.
 - Realizado: Godot importou as folhas de parado e corrida, carregou `player.tscn` e compilou `player.gd` sem erros.
-- Pendente: regressão completa e teste visual das animações na arena, atualmente impedidos pelas alterações locais em `project.godot` e `scenes/main.tscn` que restauraram a estrutura da Fase 0.
+- Realizado: `project.godot` e `scenes/main.tscn` foram restaurados para a versão funcional com autorização do usuário.
+- Realizado: os seis testes automatizados das Fases 1 a 6 passaram após a integração das animações de parado e corrida.
+- Pendente do usuário: validar visualmente na arena o ciclo de parado, corrida, escala e ponto de apoio.
 
 ## Ambiente conhecido
 
@@ -113,7 +115,7 @@
 
 ## Próximo bloco
 
-- Fase 7.2: restaurar com segurança a arena integrada, validar parado/corrida em jogo e ajustar escala, alinhamento e velocidade conforme o teste do usuário.
+- Fase 7.2: validar parado/corrida em jogo e ajustar escala, alinhamento e velocidade conforme o teste do usuário.
 - Fase 8: construir três salas artesanais conectadas por portas liberadas após os combates.
 - Fase 9: oferecer três melhorias após cada sala, mantendo as escolhas durante a tentativa.
 - Fase 10: criar o primeiro chefe com até três ataques sinalizados e uma mudança simples de comportamento.
