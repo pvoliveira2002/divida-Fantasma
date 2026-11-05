@@ -28,6 +28,7 @@
 - Implementado: inimigo atirador que mantém distância, mostra a linha de mira e dispara projéteis.
 - Implementado: cinco pontos de vida, morte, vitória, tela de resultado e reinício completo da tentativa.
 - Implementado: recuo dos inimigos, pausa curta no impacto, faíscas, tremor de câmera e sons provisórios para golpe, dano, esquiva e resultado.
+- Fase 7 em andamento: folha-base do Protagonista 01 integrada com quatro vistas direcionais estáticas; visual aprovado pelo usuário e preservado como `directional_base_v1.png`.
 
 ## Decisões técnicas
 
@@ -92,6 +93,9 @@
 - Realizado: build exportado iniciou em modo headless e gerou log sem erros de script ou carregamento.
 - Realizado pelo usuário: executável exportado foi testado fora do editor e aprovado, sem problemas relatados.
 - Demo de combate `0.1.0` estabilizada.
+- Realizado: Godot importou `directional_base_v1.png` e carregou a cena do jogador sem erros de script ou referências ausentes.
+- Realizado: os seis testes automatizados das Fases 1 a 6 passaram após a integração visual direcional.
+- Realizado pelo usuário: as quatro poses estáticas do Protagonista 01 foram aprovadas e devem ser preservadas como referência visual das animações.
 
 ## Ambiente conhecido
 
@@ -106,8 +110,7 @@
 
 ## Próximo bloco
 
-- Fase 6.5: proteger a demo em Git e registrar `v0.1.0`.
-- Fase 7: integrar o visual e as animações do Protagonista 01; manter o Protagonista 02 reservado como skin futura.
+- Fase 7.2: produzir e integrar as animações de parado e corrida usando as poses estáticas aprovadas como referência obrigatória.
 - Fase 8: construir três salas artesanais conectadas por portas liberadas após os combates.
 - Fase 9: oferecer três melhorias após cada sala, mantendo as escolhas durante a tentativa.
 - Fase 10: criar o primeiro chefe com até três ataques sinalizados e uma mudança simples de comportamento.

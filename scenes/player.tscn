@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/player.gd" id="1_player"]
+[ext_resource type="Texture2D" path="res://assets/characters/protagonist_01/directional_base_v1.png" id="2_protagonist"]
 
 [sub_resource type="CircleShape2D" id="Circle_player"]
 radius = 18.0
@@ -16,6 +17,13 @@ script = ExtResource("1_player")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("Circle_player")
+
+[node name="CharacterVisual" type="Sprite2D" parent="."]
+texture = ExtResource("2_protagonist")
+position = Vector2(0, -29)
+scale = Vector2(0.12, 0.12)
+hframes = 2
+vframes = 2
 
 [node name="AttackArea" type="Area2D" parent="."]
 collision_layer = 0

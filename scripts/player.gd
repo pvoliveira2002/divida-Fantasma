@@ -35,6 +35,7 @@ enum AttackState {
 
 @onready var attack_area: Area2D = $AttackArea
 @onready var attack_collision: CollisionShape2D = $AttackArea/CollisionShape2D
+@onready var character_visual: Sprite2D = $CharacterVisual
 
 var facing_direction := Vector2.DOWN
 var attack_state := AttackState.READY
@@ -49,6 +50,7 @@ var damage_flash_left := 0.0
 var current_health: int
 var is_dead := false
 var controls_enabled := true
+var visual_horizontal_direction := 1
 
 
 func _ready() -> void:
@@ -56,6 +58,7 @@ func _ready() -> void:
 	add_to_group("player")
 	attack_area.area_entered.connect(_on_attack_area_entered)
 	attack_area.body_entered.connect(_on_attack_body_entered)
+	_update_character_visual()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -75,6 +78,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		velocity = Vector2.ZERO
+		_update_character_visual()
 		return
 	damage_flash_left = maxf(damage_flash_left - delta, 0.0)
 	dodge_cooldown_left = maxf(dodge_cooldown_left - delta, 0.0)
@@ -84,6 +88,7 @@ func _physics_process(delta: float) -> void:
 	if is_dodging:
 		velocity = dodge_direction * dodge_speed
 		move_and_slide()
+		_update_character_visual()
 		queue_redraw()
 		return
 
@@ -91,11 +96,14 @@ func _physics_process(delta: float) -> void:
 	if input_direction != Vector2.ZERO:
 		if attack_state == AttackState.READY:
 			facing_direction = input_direction
+			if absf(input_direction.x) > 0.1:
+				visual_horizontal_direction = 1 if input_direction.x > 0.0 else -1
 		velocity = velocity.move_toward(input_direction * move_speed, acceleration * delta)
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, deceleration * delta)
 
 	move_and_slide()
+	_update_character_visual()
 	queue_redraw()
 
 
@@ -105,11 +113,14 @@ func start_attack(direction: Vector2) -> bool:
 
 	if direction.length_squared() > 0.001:
 		facing_direction = direction.normalized()
+		if absf(facing_direction.x) > 0.1:
+			visual_horizontal_direction = 1 if facing_direction.x > 0.0 else -1
 
 	attack_state = AttackState.WINDUP
 	attack_time_left = windup_duration
 	attack_area.rotation = facing_direction.angle()
 	hit_targets.clear()
+	_update_character_visual()
 	queue_redraw()
 	return true
 
@@ -120,10 +131,13 @@ func start_dodge(direction: Vector2) -> bool:
 
 	dodge_direction = direction.normalized() if direction.length_squared() > 0.001 else facing_direction
 	facing_direction = dodge_direction
+	if absf(facing_direction.x) > 0.1:
+		visual_horizontal_direction = 1 if facing_direction.x > 0.0 else -1
 	is_dodging = true
 	dodge_time_left = dodge_duration
 	dodge_cooldown_left = dodge_cooldown
 	dodge_started.emit()
+	_update_character_visual()
 	queue_redraw()
 	return true
 
@@ -209,24 +223,28 @@ func _try_damage_target(target: Node2D) -> void:
 			attack_landed.emit(target.global_position)
 
 
+func _update_character_visual() -> void:
+	var faces_down := facing_direction.y >= 0.0
+	if faces_down:
+		character_visual.frame = 0 if visual_horizontal_direction > 0 else 2
+	else:
+		character_visual.frame = 1 if visual_horizontal_direction > 0 else 3
+
+	if is_dead:
+		character_visual.modulate = Color(0.45, 0.48, 0.55, 0.8)
+	elif damage_flash_left > 0.0:
+		character_visual.modulate = Color(1.0, 0.55, 0.55)
+	elif is_dodging:
+		character_visual.modulate = Color(0.65, 1.0, 1.0, 0.85)
+	else:
+		character_visual.modulate = Color.WHITE
+
+
 func _draw() -> void:
 	# Formas provisórias: sombra, corpo e indicador da direção atual.
 	draw_set_transform(Vector2(0, 8), 0.0, Vector2(1.0, 0.45))
 	draw_circle(Vector2.ZERO, 24.0, Color(0.0, 0.0, 0.0, 0.35))
 	draw_set_transform(Vector2.ZERO)
-
-	var body := PackedVector2Array([
-		Vector2(0, -25),
-		Vector2(21, 0),
-		Vector2(0, 25),
-		Vector2(-21, 0),
-	])
-	var body_color := Color("4c5366") if is_dead else (Color("ffffff") if damage_flash_left > 0.0 else (Color("38d6ff") if is_dodging else Color("ff3f81")))
-	var outline_color := Color("c2f6ff") if is_dodging else Color("ff9bc2")
-	draw_colored_polygon(body, body_color)
-	draw_polyline(body + PackedVector2Array([body[0]]), outline_color, 3.0, true)
-	draw_line(Vector2.ZERO, facing_direction * 30.0, Color("fff4b0"), 4.0, true)
-	draw_circle(facing_direction * 30.0, 4.0, Color("fff4b0"))
 
 	if attack_state != AttackState.READY:
 		var attack_color := Color("fff4b0") if attack_state == AttackState.ACTIVE else Color(1.0, 0.35, 0.65, 0.55)
