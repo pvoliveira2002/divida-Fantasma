@@ -21,8 +21,9 @@ enum AttackState {
 @export_category("Visual")
 @export var idle_texture: Texture2D
 @export var run_texture: Texture2D
-@export var idle_animation_fps: float = 4.0
 @export var run_animation_fps: float = 10.0
+@export var idle_breath_amount: float = 0.8
+@export var idle_breath_speed: float = 0.9
 
 @export_category("Vida")
 @export var max_health: int = 5
@@ -59,7 +60,18 @@ var controls_enabled := true
 var visual_horizontal_direction := 1
 var visual_animation_frame := 0
 var visual_animation_time := 0.0
+var visual_breath_time := 0.0
 var visual_is_running := false
+
+const VISUAL_BASE_POSITION := Vector2(0.0, -29.0)
+const IDLE_VISUAL_SCALE := Vector2(0.12, 0.12)
+const RUN_VISUAL_SCALE := Vector2(0.22, 0.22)
+const RUN_FRAME_OFFSETS := [
+	[Vector2(0.0, 0.0), Vector2(0.9, 9.2), Vector2(1.5, 1.1), Vector2(3.6, 2.6)],
+	[Vector2(0.0, 0.0), Vector2(1.5, 1.8), Vector2(2.6, 0.0), Vector2(5.5, 0.0)],
+	[Vector2(0.0, 0.0), Vector2(0.7, 8.6), Vector2(1.1, 0.2), Vector2(2.9, 3.7)],
+	[Vector2(0.0, 0.0), Vector2(2.2, 0.7), Vector2(4.4, 0.2), Vector2(4.1, 0.0)],
+]
 
 
 func _ready() -> void:
@@ -240,13 +252,14 @@ func _update_character_visual(delta: float = 0.0) -> void:
 		visual_animation_time = 0.0
 
 	character_visual.texture = run_texture if visual_is_running else idle_texture
-	if delta > 0.0:
-		var animation_fps := run_animation_fps if visual_is_running else idle_animation_fps
+	if delta > 0.0 and visual_is_running:
 		visual_animation_time += delta
-		var frame_duration := 1.0 / maxf(animation_fps, 0.1)
+		var frame_duration := 1.0 / maxf(run_animation_fps, 0.1)
 		while visual_animation_time >= frame_duration:
 			visual_animation_time -= frame_duration
 			visual_animation_frame = (visual_animation_frame + 1) % 4
+	elif delta > 0.0:
+		visual_breath_time += delta
 
 	var faces_down := facing_direction.y >= 0.0
 	var direction_row := 0
@@ -254,7 +267,19 @@ func _update_character_visual(delta: float = 0.0) -> void:
 		direction_row = 0 if visual_horizontal_direction > 0 else 2
 	else:
 		direction_row = 1 if visual_horizontal_direction > 0 else 3
-	character_visual.frame = direction_row * 4 + visual_animation_frame
+	if visual_is_running:
+		character_visual.hframes = 4
+		character_visual.vframes = 4
+		character_visual.scale = RUN_VISUAL_SCALE
+		character_visual.frame = direction_row * 4 + visual_animation_frame
+		character_visual.position = VISUAL_BASE_POSITION + RUN_FRAME_OFFSETS[direction_row][visual_animation_frame]
+	else:
+		character_visual.hframes = 2
+		character_visual.vframes = 2
+		character_visual.scale = IDLE_VISUAL_SCALE
+		character_visual.frame = direction_row
+		var breath_offset := sin(visual_breath_time * TAU * idle_breath_speed) * idle_breath_amount
+		character_visual.position = VISUAL_BASE_POSITION + Vector2(0.0, breath_offset)
 
 	if is_dead:
 		character_visual.modulate = Color(0.45, 0.48, 0.55, 0.8)

@@ -101,6 +101,9 @@
 - Realizado: `project.godot` e `scenes/main.tscn` foram restaurados para a versão funcional com autorização do usuário.
 - Realizado: os seis testes automatizados das Fases 1 a 6 passaram após a integração das animações de parado e corrida.
 - Pendente do usuário: validar visualmente na arena o ciclo de parado, corrida, escala e ponto de apoio.
+- Ajustado após teste do usuário: idle passou a usar as poses estáticas aprovadas com respiração sutil, eliminando avanço falso entre quadros.
+- Ajustado após teste do usuário: corrida recebeu compensação individual de alinhamento para reduzir flutuação e inconsistência dos pés.
+- Realizado: os seis testes automatizados continuaram passando após as correções de idle e corrida.
 
 ## Ambiente conhecido
 
