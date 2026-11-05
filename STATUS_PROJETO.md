@@ -29,6 +29,7 @@
 - Implementado: cinco pontos de vida, morte, vitória, tela de resultado e reinício completo da tentativa.
 - Implementado: recuo dos inimigos, pausa curta no impacto, faíscas, tremor de câmera e sons provisórios para golpe, dano, esquiva e resultado.
 - Fase 7 em andamento: folha-base do Protagonista 01 integrada com quatro vistas direcionais estáticas; visual aprovado pelo usuário e preservado como `directional_base_v1.png`.
+- Fase 7.2 em andamento: folhas `idle_4dir_v1.png` e `run_4dir_v1.png` criadas e conectadas ao personagem com quatro quadros por direção.
 
 ## Decisões técnicas
 
@@ -96,6 +97,8 @@
 - Realizado: Godot importou `directional_base_v1.png` e carregou a cena do jogador sem erros de script ou referências ausentes.
 - Realizado: os seis testes automatizados das Fases 1 a 6 passaram após a integração visual direcional.
 - Realizado pelo usuário: as quatro poses estáticas do Protagonista 01 foram aprovadas e devem ser preservadas como referência visual das animações.
+- Realizado: Godot importou as folhas de parado e corrida, carregou `player.tscn` e compilou `player.gd` sem erros.
+- Pendente: regressão completa e teste visual das animações na arena, atualmente impedidos pelas alterações locais em `project.godot` e `scenes/main.tscn` que restauraram a estrutura da Fase 0.
 
 ## Ambiente conhecido
 
@@ -110,7 +113,7 @@
 
 ## Próximo bloco
 
-- Fase 7.2: produzir e integrar as animações de parado e corrida usando as poses estáticas aprovadas como referência obrigatória.
+- Fase 7.2: restaurar com segurança a arena integrada, validar parado/corrida em jogo e ajustar escala, alinhamento e velocidade conforme o teste do usuário.
 - Fase 8: construir três salas artesanais conectadas por portas liberadas após os combates.
 - Fase 9: oferecer três melhorias após cada sala, mantendo as escolhas durante a tentativa.
 - Fase 10: criar o primeiro chefe com até três ataques sinalizados e uma mudança simples de comportamento.

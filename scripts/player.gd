@@ -18,6 +18,12 @@ enum AttackState {
 @export var acceleration: float = 2200.0
 @export var deceleration: float = 2800.0
 
+@export_category("Visual")
+@export var idle_texture: Texture2D
+@export var run_texture: Texture2D
+@export var idle_animation_fps: float = 4.0
+@export var run_animation_fps: float = 10.0
+
 @export_category("Vida")
 @export var max_health: int = 5
 
@@ -51,6 +57,9 @@ var current_health: int
 var is_dead := false
 var controls_enabled := true
 var visual_horizontal_direction := 1
+var visual_animation_frame := 0
+var visual_animation_time := 0.0
+var visual_is_running := false
 
 
 func _ready() -> void:
@@ -78,7 +87,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		velocity = Vector2.ZERO
-		_update_character_visual()
+		_update_character_visual(delta)
 		return
 	damage_flash_left = maxf(damage_flash_left - delta, 0.0)
 	dodge_cooldown_left = maxf(dodge_cooldown_left - delta, 0.0)
@@ -88,7 +97,7 @@ func _physics_process(delta: float) -> void:
 	if is_dodging:
 		velocity = dodge_direction * dodge_speed
 		move_and_slide()
-		_update_character_visual()
+		_update_character_visual(delta)
 		queue_redraw()
 		return
 
@@ -103,7 +112,7 @@ func _physics_process(delta: float) -> void:
 		velocity = velocity.move_toward(Vector2.ZERO, deceleration * delta)
 
 	move_and_slide()
-	_update_character_visual()
+	_update_character_visual(delta)
 	queue_redraw()
 
 
@@ -223,12 +232,29 @@ func _try_damage_target(target: Node2D) -> void:
 			attack_landed.emit(target.global_position)
 
 
-func _update_character_visual() -> void:
+func _update_character_visual(delta: float = 0.0) -> void:
+	var should_run := is_dodging or velocity.length_squared() > 400.0
+	if should_run != visual_is_running:
+		visual_is_running = should_run
+		visual_animation_frame = 0
+		visual_animation_time = 0.0
+
+	character_visual.texture = run_texture if visual_is_running else idle_texture
+	if delta > 0.0:
+		var animation_fps := run_animation_fps if visual_is_running else idle_animation_fps
+		visual_animation_time += delta
+		var frame_duration := 1.0 / maxf(animation_fps, 0.1)
+		while visual_animation_time >= frame_duration:
+			visual_animation_time -= frame_duration
+			visual_animation_frame = (visual_animation_frame + 1) % 4
+
 	var faces_down := facing_direction.y >= 0.0
+	var direction_row := 0
 	if faces_down:
-		character_visual.frame = 0 if visual_horizontal_direction > 0 else 2
+		direction_row = 0 if visual_horizontal_direction > 0 else 2
 	else:
-		character_visual.frame = 1 if visual_horizontal_direction > 0 else 3
+		direction_row = 1 if visual_horizontal_direction > 0 else 3
+	character_visual.frame = direction_row * 4 + visual_animation_frame
 
 	if is_dead:
 		character_visual.modulate = Color(0.45, 0.48, 0.55, 0.8)

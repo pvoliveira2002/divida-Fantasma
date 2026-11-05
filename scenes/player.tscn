@@ -1,7 +1,8 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/player.gd" id="1_player"]
-[ext_resource type="Texture2D" path="res://assets/characters/protagonist_01/directional_base_v1.png" id="2_protagonist"]
+[ext_resource type="Texture2D" path="res://assets/characters/protagonist_01/idle_4dir_v1.png" id="2_idle"]
+[ext_resource type="Texture2D" path="res://assets/characters/protagonist_01/run_4dir_v1.png" id="3_run"]
 
 [sub_resource type="CircleShape2D" id="Circle_player"]
 radius = 18.0
@@ -14,16 +15,18 @@ z_index = 10
 collision_layer = 2
 collision_mask = 1
 script = ExtResource("1_player")
+idle_texture = ExtResource("2_idle")
+run_texture = ExtResource("3_run")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("Circle_player")
 
 [node name="CharacterVisual" type="Sprite2D" parent="."]
-texture = ExtResource("2_protagonist")
+texture = ExtResource("2_idle")
 position = Vector2(0, -29)
-scale = Vector2(0.12, 0.12)
-hframes = 2
-vframes = 2
+scale = Vector2(0.22, 0.22)
+hframes = 4
+vframes = 4
 
 [node name="AttackArea" type="Area2D" parent="."]
 collision_layer = 0
