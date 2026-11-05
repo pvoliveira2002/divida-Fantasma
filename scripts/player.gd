@@ -72,6 +72,7 @@ const RUN_FRAME_OFFSETS := [
 	[Vector2(0.0, 0.0), Vector2(0.7, 8.6), Vector2(1.1, 0.2), Vector2(2.9, 3.7)],
 	[Vector2(0.0, 0.0), Vector2(2.2, 0.7), Vector2(4.4, 0.2), Vector2(4.1, 0.0)],
 ]
+const BACK_RUN_FRAME_SEQUENCE := [0, 0, 2, 2]
 
 
 func _ready() -> void:
@@ -271,8 +272,11 @@ func _update_character_visual(delta: float = 0.0) -> void:
 		character_visual.hframes = 4
 		character_visual.vframes = 4
 		character_visual.scale = RUN_VISUAL_SCALE
-		character_visual.frame = direction_row * 4 + visual_animation_frame
-		character_visual.position = VISUAL_BASE_POSITION + RUN_FRAME_OFFSETS[direction_row][visual_animation_frame]
+		var displayed_run_frame := visual_animation_frame
+		if direction_row == 1 or direction_row == 3:
+			displayed_run_frame = BACK_RUN_FRAME_SEQUENCE[visual_animation_frame]
+		character_visual.frame = direction_row * 4 + displayed_run_frame
+		character_visual.position = VISUAL_BASE_POSITION + RUN_FRAME_OFFSETS[direction_row][displayed_run_frame]
 	else:
 		character_visual.hframes = 2
 		character_visual.vframes = 2

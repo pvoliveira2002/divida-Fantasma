@@ -104,6 +104,7 @@
 - Ajustado após teste do usuário: idle passou a usar as poses estáticas aprovadas com respiração sutil, eliminando avanço falso entre quadros.
 - Ajustado após teste do usuário: corrida recebeu compensação individual de alinhamento para reduzir flutuação e inconsistência dos pés.
 - Realizado: os seis testes automatizados continuaram passando após as correções de idle e corrida.
+- Ajustado após novo teste do usuário: diagonais para cima usam apenas os quadros traseiros com contato dos pés legível, evitando o desaparecimento do pé dianteiro.
 
 ## Ambiente conhecido
 
