@@ -122,6 +122,9 @@ Atualize esse registro após entregas relevantes, sem transformá-lo em um hist�
 
 Fale em português claro. Explique decisões quando elas afetarem o trabalho do usuário, evitando repetir informações já estabelecidas.
 
+- Após implementar uma alteração jogável e concluir as validações automatizadas disponíveis, inicie o jogo automaticamente para o teste manual do usuário.
+- Não abra o jogo quando a entrega alterar somente documentação, organização interna sem efeito visual ou quando o usuário pedir explicitamente para não iniciar.
+
 Ao concluir uma entrega, informe brevemente:
 
 - O que mudou e já pode ser usado.
