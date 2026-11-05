@@ -105,6 +105,8 @@
 - Ajustado após teste do usuário: corrida recebeu compensação individual de alinhamento para reduzir flutuação e inconsistência dos pés.
 - Realizado: os seis testes automatizados continuaram passando após as correções de idle e corrida.
 - Ajustado após novo teste do usuário: diagonais para cima usam apenas os quadros traseiros com contato dos pés legível, evitando o desaparecimento do pé dianteiro.
+- Fase 7.3 em andamento: folha de ataque em quatro direções criada e conectada aos estados reais de preparação, impacto e recuperação.
+- Realizado: Godot importou a folha de ataque e os seis testes automatizados passaram, incluindo dano único por golpe e regressões de esquiva.
 
 ## Ambiente conhecido
 
@@ -119,7 +121,7 @@
 
 ## Próximo bloco
 
-- Fase 7.2: validar parado/corrida em jogo e ajustar escala, alinhamento e velocidade conforme o teste do usuário.
+- Fase 7.3: validar visualmente o soco cibernético nas quatro direções e confirmar sincronização entre quadro de impacto, alcance e dano.
 - Fase 8: construir três salas artesanais conectadas por portas liberadas após os combates.
 - Fase 9: oferecer três melhorias após cada sala, mantendo as escolhas durante a tentativa.
 - Fase 10: criar o primeiro chefe com até três ataques sinalizados e uma mudança simples de comportamento.

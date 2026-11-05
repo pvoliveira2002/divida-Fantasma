@@ -21,6 +21,7 @@ enum AttackState {
 @export_category("Visual")
 @export var idle_texture: Texture2D
 @export var run_texture: Texture2D
+@export var attack_texture: Texture2D
 @export var run_animation_fps: float = 10.0
 @export var idle_breath_amount: float = 0.8
 @export var idle_breath_speed: float = 0.9
@@ -246,13 +247,17 @@ func _try_damage_target(target: Node2D) -> void:
 
 
 func _update_character_visual(delta: float = 0.0) -> void:
-	var should_run := is_dodging or velocity.length_squared() > 400.0
+	var visual_is_attacking := attack_state != AttackState.READY
+	var should_run := not visual_is_attacking and (is_dodging or velocity.length_squared() > 400.0)
 	if should_run != visual_is_running:
 		visual_is_running = should_run
 		visual_animation_frame = 0
 		visual_animation_time = 0.0
 
-	character_visual.texture = run_texture if visual_is_running else idle_texture
+	if visual_is_attacking:
+		character_visual.texture = attack_texture
+	else:
+		character_visual.texture = run_texture if visual_is_running else idle_texture
 	if delta > 0.0 and visual_is_running:
 		visual_animation_time += delta
 		var frame_duration := 1.0 / maxf(run_animation_fps, 0.1)
@@ -268,7 +273,21 @@ func _update_character_visual(delta: float = 0.0) -> void:
 		direction_row = 0 if visual_horizontal_direction > 0 else 2
 	else:
 		direction_row = 1 if visual_horizontal_direction > 0 else 3
-	if visual_is_running:
+	if visual_is_attacking:
+		character_visual.hframes = 4
+		character_visual.vframes = 4
+		character_visual.scale = RUN_VISUAL_SCALE
+		var attack_frame := 0
+		match attack_state:
+			AttackState.WINDUP:
+				attack_frame = 0 if attack_time_left > windup_duration * 0.5 else 1
+			AttackState.ACTIVE:
+				attack_frame = 2
+			AttackState.RECOVERY:
+				attack_frame = 3
+		character_visual.frame = direction_row * 4 + attack_frame
+		character_visual.position = VISUAL_BASE_POSITION
+	elif visual_is_running:
 		character_visual.hframes = 4
 		character_visual.vframes = 4
 		character_visual.scale = RUN_VISUAL_SCALE
