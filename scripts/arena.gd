@@ -13,6 +13,10 @@ const FLOOR_COLOR := Color("101a32")
 const GRID_COLOR := Color("1b4963")
 const BORDER_COLOR := Color("2fffd5")
 const HIT_SPARK_SCENE := preload("res://scenes/hit_spark.tscn")
+const ROOM_SEQUENCE := preload("res://scripts/room_sequence.gd")
+const RUN_UPGRADES := preload("res://scripts/run_upgrades.gd")
+const COMBAT_PROTOCOLS := preload("res://scripts/combat_protocols.gd")
+const GAME_MENU := preload("res://scripts/game_menu.gd")
 
 @onready var player = $Player
 @onready var health_label: Label = $Interface/Health
@@ -25,12 +29,15 @@ const HIT_SPARK_SCENE := preload("res://scenes/hit_spark.tscn")
 @onready var result_audio: AudioStreamPlayer = $Audio/Result
 
 var run_state := RunState.PLAYING
-var enemies_were_present := false
 var hit_stop_left := 0.0
 var frozen_nodes: Dictionary = {}
 var shake_left := 0.0
 var shake_strength := 0.0
 var random := RandomNumberGenerator.new()
+var rooms: Node2D
+var upgrades: Control
+var protocols: Node2D
+var menus: CanvasLayer
 
 
 func _ready() -> void:
@@ -42,8 +49,24 @@ func _ready() -> void:
 	damage_audio.stream = _make_tone(95.0, 0.11, 0.30)
 	dodge_audio.stream = _make_tone(420.0, 0.075, 0.12)
 	result_audio.stream = _make_tone(620.0, 0.22, 0.0)
-	enemies_were_present = not get_tree().get_nodes_in_group("enemy").is_empty()
 	_update_health_display()
+	rooms = ROOM_SEQUENCE.new()
+	rooms.name = "RoomSequence"
+	rooms.sequence_completed.connect(func(): _end_run(RunState.VICTORY))
+	add_child(rooms)
+	upgrades = RUN_UPGRADES.new()
+	upgrades.name = "UpgradeChoice"
+	upgrades.arena = self
+	$Interface.add_child(upgrades)
+	upgrades.chosen.connect(rooms.on_upgrade_chosen)
+	protocols = COMBAT_PROTOCOLS.new()
+	protocols.name = "CombatProtocols"
+	add_child(protocols)
+	menus = GAME_MENU.new()
+	menus.name = "GameMenu"
+	menus.in_game = true
+	add_child(menus)
+	menus.attach_result_buttons(result_overlay)
 	queue_redraw()
 
 
@@ -51,15 +74,13 @@ func _process(delta: float) -> void:
 	_update_hit_stop(delta)
 	_update_camera_shake(delta)
 	_update_health_display()
-	if run_state == RunState.PLAYING and enemies_were_present and get_tree().get_nodes_in_group("enemy").is_empty():
-		_end_run(RunState.VICTORY)
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if run_state == RunState.PLAYING:
 		return
 	if event is InputEventKey and event.physical_keycode == KEY_R and event.pressed and not event.echo:
-		get_tree().reload_current_scene()
+		menus.start_run()
 
 
 func _on_player_died() -> void:
@@ -72,12 +93,12 @@ func _on_attack_landed(world_position: Vector2) -> void:
 	spark.global_position = world_position
 	hit_audio.play()
 	_start_hit_stop(0.045)
-	_start_camera_shake(5.0, 0.10)
+	_start_camera_shake(1.5, 0.07)
 
 
 func _on_player_damaged() -> void:
 	damage_audio.play()
-	_start_camera_shake(8.0, 0.16)
+	_start_camera_shake(2.4, 0.10)
 
 
 func _on_dodge_started() -> void:
@@ -90,6 +111,9 @@ func _end_run(result: RunState) -> void:
 	run_state = result
 	_finish_hit_stop()
 	player.controls_enabled = false
+	upgrades.hide()
+	protocols.clear_room()
+	player.reset_combat_pose()
 	result_title.text = "MEMÓRIAS RECUPERADAS" if result == RunState.VICTORY else "CONEXÃO INTERROMPIDA"
 	result_title.modulate = Color("2fffd5") if result == RunState.VICTORY else Color("ff496c")
 	result_overlay.visible = true
@@ -171,7 +195,10 @@ func _update_health_display() -> void:
 
 
 func _draw() -> void:
-	draw_colored_polygon(floor_points, FLOOR_COLOR)
+	var floor_color := FLOOR_COLOR
+	if is_instance_valid(rooms):
+		floor_color = rooms.ROOM_COLORS[rooms.room_index]
+	draw_colored_polygon(floor_points, floor_color)
 	_draw_isometric_grid()
 	draw_polyline(floor_points + PackedVector2Array([floor_points[0]]), BORDER_COLOR, 5.0, true)
 

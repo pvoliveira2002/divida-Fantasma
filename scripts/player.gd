@@ -5,6 +5,7 @@ signal health_changed(current: int, maximum: int)
 signal attack_landed(world_position: Vector2)
 signal player_damaged
 signal dodge_started
+signal protocol_hit(target: Node2D, impact: Vector2, swing: int)
 
 enum AttackState {
 	READY,
@@ -25,6 +26,7 @@ enum AttackState {
 @export var run_animation_fps: float = 10.0
 @export var idle_breath_amount: float = 0.8
 @export var idle_breath_speed: float = 0.9
+@export var death_animation_duration: float = 0.45
 
 @export_category("Vida")
 @export var max_health: int = 5
@@ -63,6 +65,10 @@ var visual_animation_frame := 0
 var visual_animation_time := 0.0
 var visual_breath_time := 0.0
 var visual_is_running := false
+var death_animation_time := 0.0
+var attack_serial := 0
+var circuit_visual_charge := 0
+var overload_visual_charge := 0
 
 const VISUAL_BASE_POSITION := Vector2(0.0, -29.0)
 const IDLE_VISUAL_SCALE := Vector2(0.12, 0.12)
@@ -100,6 +106,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
+		velocity = Vector2.ZERO
+		death_animation_time = minf(death_animation_time + delta, maxf(death_animation_duration, 0.001))
+		_update_character_visual(delta)
+		return
+	if not controls_enabled:
 		velocity = Vector2.ZERO
 		_update_character_visual(delta)
 		return
@@ -140,6 +151,7 @@ func start_attack(direction: Vector2) -> bool:
 			visual_horizontal_direction = 1 if facing_direction.x > 0.0 else -1
 
 	attack_state = AttackState.WINDUP
+	attack_serial += 1
 	attack_time_left = windup_duration
 	attack_area.rotation = facing_direction.angle()
 	hit_targets.clear()
@@ -179,6 +191,7 @@ func receive_enemy_hit(damage: int = 1) -> bool:
 	player_damaged.emit()
 	if current_health == 0:
 		_die()
+	_update_character_visual()
 	queue_redraw()
 	return true
 
@@ -187,8 +200,28 @@ func _die() -> void:
 	is_dead = true
 	controls_enabled = false
 	velocity = Vector2.ZERO
+	attack_state = AttackState.READY
+	attack_time_left = 0.0
+	hit_targets.clear()
+	is_dodging = false
+	dodge_time_left = 0.0
+	damage_flash_left = 0.0
+	death_animation_time = 0.0
 	attack_collision.set_deferred("disabled", true)
 	died.emit()
+	queue_redraw()
+
+
+func reset_combat_pose() -> void:
+	velocity = Vector2.ZERO
+	attack_state = AttackState.READY
+	attack_time_left = 0.0
+	hit_targets.clear()
+	is_dodging = false
+	dodge_time_left = 0.0
+	damage_flash_left = 0.0
+	attack_collision.set_deferred("disabled", true)
+	_update_character_visual()
 	queue_redraw()
 
 
@@ -236,7 +269,7 @@ func _on_attack_body_entered(target: Node2D) -> void:
 
 
 func _try_damage_target(target: Node2D) -> void:
-	if attack_state != AttackState.ACTIVE or target in hit_targets:
+	if is_dead or attack_state != AttackState.ACTIVE or target in hit_targets:
 		return
 
 	hit_targets.append(target)
@@ -244,17 +277,24 @@ func _try_damage_target(target: Node2D) -> void:
 		var damage_applied = target.take_damage(attack_damage, facing_direction)
 		if damage_applied != false:
 			attack_landed.emit(target.global_position)
+			protocol_hit.emit(target, target.global_position, attack_serial)
 
 
 func _update_character_visual(delta: float = 0.0) -> void:
+	if is_dead:
+		_update_death_visual()
+		return
 	var visual_is_attacking := attack_state != AttackState.READY
-	var should_run := not visual_is_attacking and (is_dodging or velocity.length_squared() > 400.0)
+	var should_run := not visual_is_attacking and not is_dodging and velocity.length_squared() > 400.0
 	if should_run != visual_is_running:
 		visual_is_running = should_run
 		visual_animation_frame = 0
 		visual_animation_time = 0.0
 
-	if visual_is_attacking:
+	character_visual.rotation = 0.0
+	if is_dodging:
+		character_visual.texture = run_texture
+	elif visual_is_attacking:
 		character_visual.texture = attack_texture
 	else:
 		character_visual.texture = run_texture if visual_is_running else idle_texture
@@ -273,7 +313,18 @@ func _update_character_visual(delta: float = 0.0) -> void:
 		direction_row = 0 if visual_horizontal_direction > 0 else 2
 	else:
 		direction_row = 1 if visual_horizontal_direction > 0 else 3
-	if visual_is_attacking:
+	if is_dodging:
+		# Visual-only impulse: physics and invulnerability keep their original timing.
+		var progress := clampf(1.0 - dodge_time_left / maxf(dodge_duration, 0.001), 0.0, 1.0)
+		var compression := sin(progress * PI)
+		character_visual.hframes = 4
+		character_visual.vframes = 4
+		var dodge_frame := 0 if progress < 0.2 or progress >= 0.8 else 2
+		character_visual.frame = direction_row * 4 + dodge_frame
+		character_visual.scale = RUN_VISUAL_SCALE * Vector2(1.0 + 0.08 * compression, 1.0 - 0.22 * compression)
+		character_visual.rotation = dodge_direction.x * 0.18 * compression
+		character_visual.position = VISUAL_BASE_POSITION + RUN_FRAME_OFFSETS[direction_row][dodge_frame] + Vector2(0.0, 7.0 * compression)
+	elif visual_is_attacking:
 		character_visual.hframes = 4
 		character_visual.vframes = 4
 		character_visual.scale = RUN_VISUAL_SCALE
@@ -304,14 +355,31 @@ func _update_character_visual(delta: float = 0.0) -> void:
 		var breath_offset := sin(visual_breath_time * TAU * idle_breath_speed) * idle_breath_amount
 		character_visual.position = VISUAL_BASE_POSITION + Vector2(0.0, breath_offset)
 
-	if is_dead:
-		character_visual.modulate = Color(0.45, 0.48, 0.55, 0.8)
-	elif damage_flash_left > 0.0:
+	if damage_flash_left > 0.0:
+		# Recoil stays on the sprite, preserving movement and attack timing.
+		var strength := clampf(damage_flash_left / 0.16, 0.0, 1.0)
+		character_visual.position -= facing_direction * 4.0 * strength
+		character_visual.rotation += sin((1.0 - strength) * TAU) * 0.12 * strength
 		character_visual.modulate = Color(1.0, 0.55, 0.55)
 	elif is_dodging:
 		character_visual.modulate = Color(0.65, 1.0, 1.0, 0.85)
 	else:
 		character_visual.modulate = Color.WHITE
+
+
+func _update_death_visual() -> void:
+	var progress := clampf(death_animation_time / maxf(death_animation_duration, 0.001), 0.0, 1.0)
+	var fall := progress * progress * (3.0 - 2.0 * progress)
+	var direction_row := (0 if visual_horizontal_direction > 0 else 2) if facing_direction.y >= 0.0 else (1 if visual_horizontal_direction > 0 else 3)
+	character_visual.texture = idle_texture
+	character_visual.hframes = 2
+	character_visual.vframes = 2
+	character_visual.frame = direction_row
+	character_visual.scale = IDLE_VISUAL_SCALE * Vector2(1.0, lerpf(1.0, 0.75, fall))
+	character_visual.rotation = visual_horizontal_direction * PI * 0.48 * fall
+	# Rotate around the feet instead of spinning around the sprite's center.
+	character_visual.position = Vector2(0.0, 5.0) + Vector2(0.0, -34.0 * lerpf(1.0, 0.75, fall)).rotated(character_visual.rotation)
+	character_visual.modulate = Color.WHITE.lerp(Color(0.45, 0.48, 0.55, 0.8), fall)
 
 
 func _draw() -> void:

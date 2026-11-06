@@ -26,12 +26,23 @@ func _run() -> void:
 	_assert(dodge_started, "A primeira esquiva deve iniciar.")
 	_assert(player.is_invulnerable(), "A esquiva deve conceder invulnerabilidade quando configurada.")
 	_assert(not player.start_dodge(Vector2.RIGHT), "Não deve ser possível repetir a esquiva imediatamente.")
+	var sprite := player.get_node("CharacterVisual") as Sprite2D
+	player._update_character_visual()
+	var initial_position: Vector2 = player.position
+	var initial_time: float = player.dodge_time_left
+	player.dodge_time_left = player.dodge_duration * 0.5
+	player._update_character_visual()
+	_assert(sprite.scale.y < player.RUN_VISUAL_SCALE.y, "A esquiva deve abaixar a pose durante o impulso.")
+	_assert(sprite.rotation > 0.0, "A pose deve inclinar na direção do impulso.")
+	_assert(player.position == initial_position, "A animação não deve deslocar o corpo físico.")
+	player.dodge_time_left = initial_time
 
 	for _frame in 14:
 		await physics_frame
 
 	_assert(player.position.x > 70.0, "A esquiva deve deslocar o personagem.")
 	_assert(not player.is_invulnerable(), "A invulnerabilidade deve terminar junto com a esquiva.")
+	_assert(is_zero_approx(sprite.rotation), "A inclinação deve ser limpa ao terminar a esquiva.")
 	_assert(not player.start_dodge(Vector2.RIGHT), "A recarga deve continuar após o fim do impulso.")
 
 	for _frame in 24:
