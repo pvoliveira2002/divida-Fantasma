@@ -9,15 +9,28 @@ const BOSS_ROOM := 3
 const EXIT_POSITION := Vector2(400, 0)
 const ROOM_NAMES := ["ACESSO", "ARQUIVO", "NÚCLEO", "COBRADOR DE MEMÓRIAS"]
 const ROOM_COLORS := [Color("101a32"), Color("201731"), Color("102a2c"), Color("291a24")]
-# Authored encounters; the first room keeps the approved demo arrangement.
-const ENCOUNTERS := [
-	[],
-	[[false, Vector2(20, -150)], [false, Vector2(100, 140)], [true, Vector2(300, 0)]],
-	[[false, Vector2(-10, -170)], [false, Vector2(-10, 170)], [true, Vector2(220, -95)], [true, Vector2(220, 95)]],
-	[[false, Vector2(0, -150)], [false, Vector2(0, 150)]],
+# Three authored waves per room. Room 0 wave 0 is preplaced in main.tscn.
+const ROOM_WAVES := [
+	[
+		[],
+		[[false, Vector2(-40, -150)], [false, Vector2(80, 145)], [true, Vector2(285, 0)]],
+		[[false, Vector2(-80, -165)], [false, Vector2(30, 165)], [true, Vector2(225, -95)], [true, Vector2(270, 105)]],
+	],
+	[
+		[[false, Vector2(20, -150)], [false, Vector2(100, 140)], [true, Vector2(300, 0)]],
+		[[false, Vector2(-90, -165)], [false, Vector2(30, 165)], [true, Vector2(230, -100)], [true, Vector2(280, 105)]],
+		[[false, Vector2(-130, 0)], [false, Vector2(0, -175)], [false, Vector2(30, 175)], [true, Vector2(225, -105)], [true, Vector2(285, 105)]],
+	],
+	[
+		[[false, Vector2(-10, -170)], [false, Vector2(-10, 170)], [true, Vector2(220, -95)], [true, Vector2(220, 95)]],
+		[[false, Vector2(-125, 0)], [false, Vector2(5, -175)], [false, Vector2(5, 175)], [true, Vector2(235, -105)], [true, Vector2(275, 105)]],
+		[[false, Vector2(-150, -100)], [false, Vector2(-150, 100)], [false, Vector2(15, 0)], [true, Vector2(205, -135)], [true, Vector2(290, 0)], [true, Vector2(205, 135)]],
+	],
 ]
+const BOSS_GUARDS := [[false, Vector2(0, -150)], [false, Vector2(0, 150)]]
 
 var room_index := 0
+var wave_index := 0
 var room_cleared := false
 var reward_selected := false
 var transitioning := false
@@ -46,13 +59,17 @@ func _process(_delta: float) -> void:
 	if arena.run_state != arena.RunState.PLAYING or transitioning:
 		return
 	if not room_cleared and _enemies().is_empty():
-		room_cleared = true
 		_clear_projectiles()
 		arena.protocols.clear_room()
-		if room_index == BOSS_ROOM:
-			sequence_completed.emit()
+		if room_index < BOSS_ROOM and wave_index + 1 < ROOM_WAVES[room_index].size():
+			wave_index += 1
+			_spawn_encounter(ROOM_WAVES[room_index][wave_index])
 		else:
-			arena.upgrades.offer(room_index)
+			room_cleared = true
+			if room_index == BOSS_ROOM:
+				sequence_completed.emit()
+			else:
+				arena.upgrades.offer(room_index)
 		_update_labels()
 		queue_redraw()
 
@@ -118,13 +135,14 @@ func _transition() -> void:
 	arena.camera.offset = Vector2.ZERO
 	arena.camera.reset_smoothing()
 	room_index += 1
+	wave_index = 0
 	room_cleared = false
 	reward_selected = false
 	gate_collision.disabled = false
-	for spawn in ENCOUNTERS[room_index]:
-		var enemy = (RANGED if spawn[0] else MELEE).instantiate()
-		enemy.position = spawn[1]
-		arena.add_child(enemy)
+	if room_index == BOSS_ROOM:
+		_spawn_encounter(BOSS_GUARDS)
+	else:
+		_spawn_encounter(ROOM_WAVES[room_index][wave_index])
 	if room_index == BOSS_ROOM:
 		boss = BOSS.instantiate()
 		boss.position = Vector2(180, 0)
@@ -136,11 +154,19 @@ func _transition() -> void:
 	transitioning = false
 
 
+func _spawn_encounter(encounter: Array) -> void:
+	for spawn in encounter:
+		var enemy = (RANGED if spawn[0] else MELEE).instantiate()
+		enemy.position = spawn[1]
+		arena.add_child(enemy)
+
+
 func _update_labels() -> void:
-	arena.get_node("Interface/Phase").text = "SALA %d/3 — %s" % [room_index + 1, ROOM_NAMES[room_index]]
+	var total_waves: int = ROOM_WAVES[room_index].size() if room_index < BOSS_ROOM else 1
+	arena.get_node("Interface/Phase").text = "SALA %d/3 — %s · ONDA %d/%d" % [room_index + 1, ROOM_NAMES[room_index], wave_index + 1, total_waves]
 	if room_index == BOSS_ROOM:
 		arena.get_node("Interface/Phase").text = "CONFRONTO FINAL"
-	var hint := "Elimine os inimigos para liberar a porta à direita."
+	var hint := "Elimine a onda atual. Novos sinais hostis podem entrar na sala."
 	if room_cleared:
 		hint = "Instale um protocolo para continuar."
 		if reward_selected:

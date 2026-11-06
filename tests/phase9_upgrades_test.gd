@@ -5,6 +5,14 @@ var failed := false
 func _initialize() -> void:
 	call_deferred("_run")
 
+func _clear_waves(arena) -> void:
+	while not arena.rooms.room_cleared:
+		for enemy in get_nodes_in_group("enemy"):
+			enemy.queue_free()
+		await process_frame
+		await process_frame
+		await physics_frame
+
 func _run() -> void:
 	var scene := load("res://scenes/main.tscn") as PackedScene
 	var arena = scene.instantiate()
@@ -16,10 +24,7 @@ func _run() -> void:
 	var original_cooldown: float = player.dodge_cooldown
 	var original_invulnerability_duration: float = player.dodge_duration
 	for room_index in 3:
-		for enemy in get_nodes_in_group("enemy"):
-			enemy.queue_free()
-		await process_frame
-		await process_frame
+		await _clear_waves(arena)
 		_assert(upgrades.visible and upgrades.pending_room == room_index, "Limpar a sala deve abrir três opções.")
 		_assert(not player.controls_enabled, "A seleção deve bloquear controles de combate.")
 		_assert(not player.start_attack(Vector2.RIGHT) and not player.start_dodge(Vector2.RIGHT), "Ataque e esquiva não podem ocorrer durante seleção.")
@@ -69,16 +74,13 @@ func _run() -> void:
 	_assert(arena.upgrades.ranks == [0, 0, 0] and arena.upgrades.rewarded_rooms.is_empty(), "Nova tentativa deve remover níveis e recompensas antigas.")
 	_assert(arena.protocols.ranks == [0, 0, 0], "Reiniciar deve remover todos os protocolos.")
 	_assert(arena.player.attack_damage == 1 and is_equal_approx(arena.player.dodge_cooldown, original_cooldown), "Nova tentativa deve restaurar atributos básicos.")
-	for enemy in get_nodes_in_group("enemy"):
-		enemy.queue_free()
-	await process_frame
-	await process_frame
+	await _clear_waves(arena)
 	var recovery_before: float = arena.player.recovery_duration
 	# Exercise the real keyboard selection path.
 	var key := InputEventKey.new()
 	key.physical_keycode = KEY_2
 	key.pressed = true
-	Input.parse_input_event(key)
+	arena.upgrades._unhandled_input(key)
 	await process_frame
 	_assert(arena.protocols.ranks[1] == 1, "Tecla 2 deve instalar Rastro Fantasma.")
 	_assert(is_equal_approx(arena.player.recovery_duration, recovery_before), "Instalar protocolo não altera o tempo básico de ataque.")

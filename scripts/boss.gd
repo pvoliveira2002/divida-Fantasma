@@ -5,12 +5,12 @@ enum State { APPROACH, WINDUP, DASHING, RECOVERY, DEAD }
 enum Attack { VOLLEY, DASH, SLAM }
 
 const PROJECTILE := preload("res://scenes/enemy_projectile.tscn")
-@export var max_health := 24
-@export var move_speed := 110.0
-@export var windup_duration := 0.85
-@export var recovery_duration := 1.05
-@export var slam_radius := 120.0
-@export var dash_speed := 720.0
+@export var max_health := 36
+@export var move_speed := 120.0
+@export var windup_duration := 0.75
+@export var recovery_duration := 0.85
+@export var slam_radius := 130.0
+@export var dash_speed := 780.0
 @export var dash_duration := 0.36
 @export var projectile_speed := 240.0
 
@@ -68,7 +68,7 @@ func _physics_process(delta: float) -> void:
 		State.RECOVERY:
 			if state_time <= 0.0:
 				state = State.APPROACH
-				state_time = 0.65
+				state_time = 0.45
 	queue_redraw()
 
 
@@ -112,7 +112,7 @@ func _execute_attack() -> void:
 
 func _enter_recovery() -> void:
 	state = State.RECOVERY
-	state_time = recovery_duration * (0.75 if enraged else 1.0)
+	state_time = recovery_duration * (0.65 if enraged else 1.0)
 	velocity = Vector2.ZERO
 
 

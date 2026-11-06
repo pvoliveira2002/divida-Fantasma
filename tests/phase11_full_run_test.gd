@@ -19,6 +19,17 @@ func _key(code: int) -> void:
 	event.pressed = false
 	Input.parse_input_event(event)
 
+func _defeat_current_wave(arena) -> void:
+	for enemy in get_nodes_in_group("enemy"):
+		enemy.set_physics_process(false)
+		while not enemy.is_queued_for_deletion():
+			arena.player.reset_combat_pose()
+			arena.player.start_attack(enemy.position - arena.player.position)
+			arena.player.attack_state = arena.player.AttackState.ACTIVE
+			arena.player._try_damage_target(enemy)
+			arena._finish_hit_stop()
+	await _settle()
+
 func _run() -> void:
 	var menu = load("res://scenes/menu.tscn").instantiate()
 	root.add_child(menu)
@@ -35,15 +46,11 @@ func _run() -> void:
 		await _settle()
 		_assert(not paused, "Esc deve retomar em qualquer sala.")
 		# Deterministic combat-path exercise; this does not measure manual difficulty.
-		for enemy in get_nodes_in_group("enemy"):
-			enemy.set_physics_process(false)
-			while not enemy.is_queued_for_deletion():
-				arena.player.reset_combat_pose()
-				arena.player.start_attack(enemy.position - arena.player.position)
-				arena.player.attack_state = arena.player.AttackState.ACTIVE
-				arena.player._try_damage_target(enemy)
-				arena._finish_hit_stop()
-		await _settle()
+		if room_index < 3:
+			while not arena.rooms.room_cleared:
+				await _defeat_current_wave(arena)
+		else:
+			await _defeat_current_wave(arena)
 		if room_index < 3:
 			_assert(arena.upgrades.visible, "Sala normal deve oferecer protocolos.")
 			_key([KEY_1, KEY_2, KEY_3][room_index])

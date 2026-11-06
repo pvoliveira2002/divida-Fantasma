@@ -7,6 +7,15 @@ func _initialize() -> void:
 	call_deferred("_run")
 
 
+func _clear_waves(arena) -> void:
+	while not arena.rooms.room_cleared:
+		for enemy in get_nodes_in_group("enemy"):
+			enemy.queue_free()
+		await process_frame
+		await process_frame
+		await physics_frame
+
+
 func _run() -> void:
 	var main_scene := load("res://scenes/main.tscn") as PackedScene
 	_assert(main_scene != null, "A cena principal deve carregar.")
@@ -61,10 +70,7 @@ func _run() -> void:
 	await physics_frame
 	await physics_frame
 	for room_index in 3:
-		for enemy in get_nodes_in_group("enemy"):
-			enemy.queue_free()
-		await process_frame
-		await process_frame
+		await _clear_waves(victory_run)
 		_assert(victory_run.upgrades.choose(1), "Cada sala deve oferecer uma melhoria antes de continuar.")
 		if room_index < 3:
 			_assert(victory_run.run_state == 0, "Limpar uma sala intermediária não deve encerrar a tentativa.")

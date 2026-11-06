@@ -1,6 +1,7 @@
 extends SceneTree
 
 var failed := false
+const EXPECTED_WAVES := [[2, 3, 4], [3, 4, 5], [4, 5, 6]]
 
 func _initialize() -> void:
 	call_deferred("_run")
@@ -25,17 +26,17 @@ func _run() -> void:
 	_assert(player.position.x < 385.0, "A esquiva não deve atravessar a porta fechada.")
 	for room_index in 3:
 		_assert(rooms.room_index == room_index, "A ordem das salas deve ser preservada.")
-		_assert(get_nodes_in_group("enemy").size() == room_index + 2, "Cada sala deve ter seu encontro planejado.")
-		for enemy in get_nodes_in_group("enemy"):
-			enemy.set_physics_process(false)
 		var projectile = load("res://scenes/enemy_projectile.tscn").instantiate()
 		projectile.position = Vector2(0, -250)
 		arena.add_child(projectile)
-		for enemy in get_nodes_in_group("enemy"):
-			enemy.queue_free()
-		await process_frame
-		await process_frame
-		await physics_frame
+		for expected_size in EXPECTED_WAVES[room_index]:
+			_assert(get_nodes_in_group("enemy").size() == expected_size, "Cada onda deve ter a composição planejada.")
+			for enemy in get_nodes_in_group("enemy"):
+				enemy.set_physics_process(false)
+				enemy.queue_free()
+			await process_frame
+			await process_frame
+			await physics_frame
 		_assert(rooms.room_cleared, "A sala deve liberar após o último inimigo.")
 		_assert(get_nodes_in_group("enemy_projectile").is_empty(), "Projéteis antigos devem ser removidos.")
 		_assert(not rooms.try_advance(), "A porta deve aguardar a escolha da melhoria.")

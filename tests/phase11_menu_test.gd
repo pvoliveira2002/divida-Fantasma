@@ -9,6 +9,12 @@ func _settle() -> void:
 	for frame in 4:
 		await process_frame
 
+func _clear_waves(arena) -> void:
+	while not arena.rooms.room_cleared:
+		for enemy in get_nodes_in_group("enemy"):
+			enemy.queue_free()
+		await _settle()
+
 func _run() -> void:
 	var original_db := AudioServer.get_bus_volume_db(0)
 	var original_mute := AudioServer.is_bus_mute(0)
@@ -18,7 +24,8 @@ func _run() -> void:
 	_assert(menu.page == "start" and menu.panel.visible, "O jogo deve iniciar no menu.")
 	menu.open_details("controls")
 	_assert(menu.page == "controls" and menu.return_page == "start", "Controles devem permitir voltar ao menu inicial.")
-	menu.settings_path = "user://phase11_test_preferences.cfg"
+	# The protected test environment cannot write user://; use ignored project cache for this isolated persistence check.
+	menu.settings_path = "res://.godot/phase11_test_preferences.cfg"
 	menu.show_page("volume")
 	menu.set_volume(0)
 	_assert(AudioServer.is_bus_mute(0), "Volume zero deve silenciar.")
@@ -51,9 +58,7 @@ func _run() -> void:
 	_assert(not paused and not arena.menus.panel.visible, "Continuar deve remover a pausa.")
 	await create_timer(0.1).timeout
 	_assert(player.dodge_time_left < dodge_before, "Continuar deve retomar os temporizadores.")
-	for enemy in get_nodes_in_group("enemy"):
-		enemy.queue_free()
-	await _settle()
+	await _clear_waves(arena)
 	_assert(arena.upgrades.visible, "Sala limpa deve abrir seleção de protocolo.")
 	arena.menus.open_pause()
 	arena.menus.resume_game()

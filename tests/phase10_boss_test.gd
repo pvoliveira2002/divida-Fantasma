@@ -30,7 +30,7 @@ func _run() -> void:
 	_assert(player.current_health == health_before - 1, "O golpe de área deve causar um dano após o aviso.")
 	boss._physics_process(0.1)
 	_assert(player.current_health == health_before - 1, "O golpe não pode repetir dano durante recuperação.")
-	_assert(boss.state == boss.State.RECOVERY and boss.state_time > 0.8, "Deve existir janela clara de contra-ataque.")
+	_assert(boss.state == boss.State.RECOVERY and boss.state_time > 0.7, "Deve existir janela clara de contra-ataque.")
 	boss.state = boss.State.APPROACH
 	boss.start_attack(boss.Attack.SLAM)
 	player.dodge_cooldown_left = 0
@@ -68,13 +68,13 @@ func _run() -> void:
 	for frame in 30:
 		boss._physics_process(1.0 / 60.0)
 	_assert(boss.position.x < 520.0, "A investida não pode atravessar a borda da arena.")
-	boss.take_damage(12)
+	boss.take_damage(18)
 	_assert(not boss.enraged, "Metade exata da vida ainda não ativa a segunda fase.")
 	boss.take_damage(1)
 	_assert(boss.enraged, "Abaixo de metade da vida deve ativar a segunda fase.")
 	boss._enter_recovery()
-	_assert(is_equal_approx(boss.state_time, boss.recovery_duration * 0.75), "A segunda fase deve reduzir a recuperação sem removê-la.")
-	_assert(is_equal_approx(boss.windup_duration, 0.85), "A segunda fase deve preservar o tempo de aviso.")
+	_assert(is_equal_approx(boss.state_time, boss.recovery_duration * 0.65), "A segunda fase deve reduzir a recuperação sem removê-la.")
+	_assert(is_equal_approx(boss.windup_duration, 0.75), "A segunda fase deve preservar o tempo de aviso.")
 	# Protocol damage uses the same enemy contract as basic attacks.
 	boss.position = Vector2(60, 0)
 	player.position = Vector2.ZERO
@@ -88,7 +88,7 @@ func _run() -> void:
 		player._try_damage_target(boss)
 		player._try_damage_target(boss)
 		arena._finish_hit_stop()
-	_assert(boss.health == 5, "Quatro socos e uma onda devem remover seis pontos de vida do chefe.")
+	_assert(boss.health == 11, "Quatro socos e uma onda devem remover seis pontos de vida do chefe.")
 	boss.take_damage(99)
 	_assert(boss.state == boss.State.DEAD and not boss.take_damage(1), "Chefe derrotado não deve receber dano duplicado.")
 	await process_frame
