@@ -40,7 +40,7 @@ enum AttackState {
 @export_category("Esquiva")
 @export var dodge_speed: float = 820.0
 @export var dodge_duration: float = 0.16
-@export var dodge_cooldown: float = 0.55
+@export var dodge_cooldown: float = 0.65
 @export var dodge_grants_invulnerability: bool = true
 
 @onready var attack_area: Area2D = $AttackArea

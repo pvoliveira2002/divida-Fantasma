@@ -11,7 +11,7 @@
 
 - Abra `tools/godot/4.7.2/Godot_v4.7.2-stable_win64.exe` e importe `project.godot`, se necessário.
 - Execute o projeto com **F5** no editor.
-- A versão Windows 0.2.0 está em `build/windows/DividaFantasma.exe`, com recursos embutidos. O jogo abre no menu inicial.
+- A versão Windows 0.2.1 está em `build/windows/DividaFantasma.exe`, com recursos embutidos. O jogo abre no menu inicial.
 - **Esc** pausa/continua. Menus oferecem controles, volume, reinício e retorno ao início. Volume geral é persistido em `user://preferences.cfg`.
 - Movimento: **WASD**.
 - Ataque direcionado ao mouse: **clique esquerdo**.
@@ -24,7 +24,7 @@
 ## Estado atual
 
 - Conceito provisório: **Dívida Fantasma**, roguelite de ação cyberpunk em 2D com perspectiva isométrica.
-- Demo de combate `0.1.0` foi o marco anterior; versão `0.2.0` exportada para Windows com salas, protocolos, chefe e menus, aguardando aceite manual final.
+- Demo de combate `0.1.0` foi o marco anterior; versão `0.2.1` aprovada com salas em ondas, protocolos, chefe com reforços, menus e recarga da esquiva rebalanceada.
 - Implementado: arena provisória isométrica, personagem, movimento em oito direções, câmera, colisões e ataque básico direcional.
 - Implementado: esquiva direcional com recarga, invulnerabilidade configurável e respeito às colisões da arena.
 - Implementado: alvo de treinamento com três pontos de vida e reinício automático após ser destruído.
@@ -169,3 +169,13 @@
 - Balanceamento do chefe em avaliação: ao chegar a 66% e 33% da vida, o Cobrador solicita uma nova dupla composta por um inimigo corpo a corpo e um atirador. Os reforços surgem afastados do jogador e não alteram vida, dano ou avisos dos ataques do chefe.
 - Realizado: doze testes automatizados passaram após a inclusão dos reforços; vitória continua exigindo eliminar o chefe e todas as escoltas, incluindo as convocadas durante a luta.
 - Próximo passo: validar manualmente se os reforços mantêm pressão sem tornar a arena confusa ou injusta.
+- Realizado pelo usuário: partida completa após os reforços durou 1 min 28 s, terminando com apenas um ponto de vida. Não foram observados bugs, trechos injustos ou problemas de leitura.
+- Observado no balanceamento: a combinação focada em esquiva ficou forte demais e acelerou excessivamente a eliminação dos encontros. A pressão ofensiva dos inimigos está relevante, mas a duração total permanece muito abaixo da meta de 5–10 minutos.
+- Próximo bloco recomendado: revisar o protocolo de esquiva preservando sua identidade, medir o tempo por sala e adicionar duração por decisões e encontros curtos, evitando inflar apenas a vida dos inimigos.
+- Decisão de balanceamento: antes de alterar o Rastro Fantasma, aumentar levemente a recarga base da esquiva de 0,55 s para 0,65 s. Distância, duração e invulnerabilidade permanecem iguais; objetivo é exigir melhor escolha do momento da esquiva e impedir repetição sem compromisso.
+- Realizado: os doze testes automatizados passaram após o ajuste da recarga, cobrindo esquiva, protocolos, salas, chefe, menus e fluxo completo. Pendente validar manualmente a sensação do novo intervalo.
+- Realizado pelo usuário: a esquiva com recarga de 0,65 s permanece funcional e satisfatória, mas deixou de ser excessivamente repetível. Ajuste aprovado; o Rastro Fantasma não precisa de redução direta neste passe.
+- Próximo passo: fazer uma cronometragem final com a recarga aprovada e, se o fluxo permanecer estável, reexportar a build Windows e fechar o marco `v0.2.1`.
+- Realizado pelo usuário: cronometragem final permaneceu próxima de 1 min 28 s, ligeiramente maior por causa da nova janela entre esquivas. Ritmo e dificuldade foram aprovados para o escopo atual.
+- Marco 0.2.1 preparado: executável Windows reexportado com recursos embutidos. A build iniciou em modo headless sem erros e seus metadados confirmaram `FileVersion` e `ProductVersion` 0.2.1.
+- Próximo bloco: preservar o balanceamento aprovado e iniciar a identidade visual dos inimigos e ambientes, substituindo recursos provisórios de forma incremental sem alterar as mecânicas.

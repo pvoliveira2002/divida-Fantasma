@@ -45,8 +45,11 @@ func _run() -> void:
 	_assert(is_zero_approx(sprite.rotation), "A inclinação deve ser limpa ao terminar a esquiva.")
 	_assert(not player.start_dodge(Vector2.RIGHT), "A recarga deve continuar após o fim do impulso.")
 
-	for _frame in 24:
+	var cooldown_safety_frames := 0
+	while player.dodge_cooldown_left > 0.0 and cooldown_safety_frames < 120:
 		await physics_frame
+		cooldown_safety_frames += 1
+	_assert(cooldown_safety_frames < 120, "A recarga da esquiva deve terminar no tempo configurado.")
 
 	player.position = Vector2(500, 0)
 	_assert(player.start_dodge(Vector2.RIGHT), "A esquiva deve voltar após a recarga.")
