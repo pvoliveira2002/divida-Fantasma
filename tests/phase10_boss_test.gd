@@ -22,6 +22,15 @@ func _run() -> void:
 	boss.set_physics_process(false)
 	boss.position = Vector2.ZERO
 	player.position = Vector2(80, 0)
+	var reinforcement_stages: Array[int] = []
+	boss.reinforcement_requested.connect(func(stage: int) -> void: reinforcement_stages.append(stage))
+	boss.take_damage(12)
+	_assert(reinforcement_stages == [1], "O chefe deve solicitar reforços ao chegar a dois terços da vida.")
+	boss.take_damage(12)
+	_assert(reinforcement_stages == [1, 2], "O chefe deve solicitar nova escolta ao chegar a um terço da vida.")
+	boss.health = boss.max_health
+	boss.reinforcement_stage = 0
+	boss.enraged = false
 	_assert(boss.start_attack(boss.Attack.SLAM), "O chefe deve preparar o golpe de área.")
 	var health_before: int = player.current_health
 	boss._physics_process(0.4)

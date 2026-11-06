@@ -59,6 +59,13 @@ func _run() -> void:
 	_assert(rooms.room_index == 3 and is_instance_valid(rooms.boss), "A última porta deve levar ao chefe.")
 	_assert(get_nodes_in_group("enemy").size() == 3, "O encontro final deve conter o chefe e dois guardas.")
 	_assert(arena.run_state == 0 and not rooms.try_advance(), "O chefe vivo deve impedir vitória e passagem.")
+	for enemy in get_nodes_in_group("enemy"):
+		if enemy != rooms.boss:
+			enemy.take_damage(999, Vector2.RIGHT)
+	await process_frame
+	rooms.boss.take_damage(12, Vector2.RIGHT)
+	await process_frame
+	_assert(get_nodes_in_group("enemy").size() == 3, "Ao perder um terço da vida, o chefe deve repor dois guardas.")
 	var boss_projectile = load("res://scenes/enemy_projectile.tscn").instantiate()
 	boss_projectile.position = Vector2(0, -250)
 	arena.add_child(boss_projectile)

@@ -147,6 +147,7 @@ func _transition() -> void:
 		boss = BOSS.instantiate()
 		boss.position = Vector2(180, 0)
 		boss.defeated.connect(_clear_projectiles)
+		boss.reinforcement_requested.connect(_spawn_boss_reinforcements)
 		arena.add_child(boss)
 	_update_labels()
 	arena.queue_redraw()
@@ -159,6 +160,17 @@ func _spawn_encounter(encounter: Array) -> void:
 		var enemy = (RANGED if spawn[0] else MELEE).instantiate()
 		enemy.position = spawn[1]
 		arena.add_child(enemy)
+
+
+func _spawn_boss_reinforcements(stage: int) -> void:
+	if room_index != BOSS_ROOM or room_cleared or arena.run_state != arena.RunState.PLAYING:
+		return
+	var y_sign := -1.0 if stage == 1 else 1.0
+	_spawn_encounter([
+		[false, Vector2(-120, 155 * y_sign)],
+		[true, Vector2(285, -120 * y_sign)],
+	])
+	arena.get_node("Interface/RoomHint").text = "REFORÇOS DETECTADOS — elimine a escolta e mantenha distância dos avisos."
 
 
 func _update_labels() -> void:

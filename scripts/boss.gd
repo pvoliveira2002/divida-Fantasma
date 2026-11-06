@@ -1,6 +1,7 @@
 extends CharacterBody2D
 
 signal defeated
+signal reinforcement_requested(stage: int)
 enum State { APPROACH, WINDUP, DASHING, RECOVERY, DEAD }
 enum Attack { VOLLEY, DASH, SLAM }
 
@@ -26,6 +27,7 @@ var enraged := false
 var flash_left := 0.0
 var impact_left := 0.0
 var target: CharacterBody2D
+var reinforcement_stage := 0
 
 
 func _ready() -> void:
@@ -121,6 +123,12 @@ func take_damage(amount: int, _hit_direction := Vector2.ZERO) -> bool:
 		return false
 	health = maxi(0, health - amount)
 	flash_left = 0.10
+	if health > 0 and reinforcement_stage == 0 and health * 3 <= max_health * 2:
+		reinforcement_stage = 1
+		reinforcement_requested.emit(reinforcement_stage)
+	elif health > 0 and reinforcement_stage == 1 and health * 3 <= max_health:
+		reinforcement_stage = 2
+		reinforcement_requested.emit(reinforcement_stage)
 	# The second phase changes pacing only; warning time and damage stay readable.
 	enraged = health > 0 and health * 2 < max_health
 	if health == 0:

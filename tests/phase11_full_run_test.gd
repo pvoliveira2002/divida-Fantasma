@@ -46,10 +46,7 @@ func _run() -> void:
 		await _settle()
 		_assert(not paused, "Esc deve retomar em qualquer sala.")
 		# Deterministic combat-path exercise; this does not measure manual difficulty.
-		if room_index < 3:
-			while not arena.rooms.room_cleared:
-				await _defeat_current_wave(arena)
-		else:
+		while not arena.rooms.room_cleared:
 			await _defeat_current_wave(arena)
 		if room_index < 3:
 			_assert(arena.upgrades.visible, "Sala normal deve oferecer protocolos.")

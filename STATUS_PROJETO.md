@@ -165,3 +165,7 @@
 - Chefe ajustado para 36 de vida, aproximação mais rápida, avisos de 0,75 s, recuperação de 0,85 s e segunda metade mais agressiva. Dano por impacto e variedade de ataques foram preservados.
 - Realizado: doze testes automatizados passaram após o balanceamento, cobrindo ondas, portas, protocolos, chefe, menus, reinício e fluxo completo. O teste isolado de volume usa `res://.godot` porque o ambiente protegido não grava em `user://`; o jogo real continua usando `user://preferences.cfg`.
 - Próximo passo: nova partida manual cronometrada. Meta intermediária deste passe: aproximadamente 3–5 minutos, antes de decidir se novas mecânicas ou mais conteúdo são necessários para alcançar 5–10 minutos.
+- Realizado pelo usuário: as ondas aumentaram satisfatoriamente o tempo até o chefe, mas o encontro final continuou fácil porque os dois guardas iniciais morriam cedo e deixavam o chefe previsível sozinho.
+- Balanceamento do chefe em avaliação: ao chegar a 66% e 33% da vida, o Cobrador solicita uma nova dupla composta por um inimigo corpo a corpo e um atirador. Os reforços surgem afastados do jogador e não alteram vida, dano ou avisos dos ataques do chefe.
+- Realizado: doze testes automatizados passaram após a inclusão dos reforços; vitória continua exigindo eliminar o chefe e todas as escoltas, incluindo as convocadas durante a luta.
+- Próximo passo: validar manualmente se os reforços mantêm pressão sem tornar a arena confusa ou injusta.
