@@ -1,7 +1,12 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/ranged_enemy.gd" id="1_ranged"]
 [ext_resource type="PackedScene" path="res://scenes/enemy_projectile.tscn" id="2_projectile"]
+[ext_resource type="Texture2D" path="res://assets/characters/enemies/network_auditor_ranged/directional_base_v1.png" id="3_auditor"]
+[ext_resource type="Texture2D" path="res://assets/characters/enemies/network_auditor_ranged/idle_4dir_v1.png" id="4_idle"]
+[ext_resource type="Texture2D" path="res://assets/characters/enemies/network_auditor_ranged/advance_4dir_v1.png" id="5_advance"]
+[ext_resource type="Texture2D" path="res://assets/characters/enemies/network_auditor_ranged/backpedal_4dir_v1.png" id="6_backpedal"]
+[ext_resource type="Texture2D" path="res://assets/characters/enemies/network_auditor_ranged/shoot_4dir_v1.png" id="7_shoot"]
 
 [sub_resource type="CircleShape2D" id="Circle_ranged"]
 radius = 23.0
@@ -12,6 +17,17 @@ collision_layer = 4
 collision_mask = 1
 script = ExtResource("1_ranged")
 projectile_scene = ExtResource("2_projectile")
+idle_texture = ExtResource("4_idle")
+advance_texture = ExtResource("5_advance")
+backpedal_texture = ExtResource("6_backpedal")
+shoot_texture = ExtResource("7_shoot")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("Circle_ranged")
+
+[node name="CharacterVisual" type="Sprite2D" parent="."]
+position = Vector2(0, -29)
+texture = ExtResource("3_auditor")
+hframes = 2
+vframes = 2
+scale = Vector2(0.21, 0.21)

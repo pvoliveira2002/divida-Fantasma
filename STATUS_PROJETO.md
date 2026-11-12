@@ -1,5 +1,60 @@
 # Status do projeto
 
+## Atualizacao atual - Fase 12.9
+
+- Escudo de plasma movido para uma camada acima do sprite, mantendo sombra e avisos abaixo do personagem. Velocidade dos tres plasmas do chefe aumentada de 240 para 270 px/s (+12,5%); dano, colisao e tempo de aviso permanecem iguais.
+
+- Os tres projeteis do chefe deixaram de ser triangulos simples: agora sao esferas de plasma azul pulsante, com nucleo claro, particulas orbitais e rastro energetico. Colisao circular, velocidade e dano foram preservados; projeteis da Auditora nao foram alterados.
+
+- Escudo do dash ampliado apos avaliacao manual: agora forma um disco oval vertical de plasma com cerca de 140 px de altura, cobrindo o corpo inteiro da cabeca aos pes e permanecendo apenas visual.
+
+- Rajada alinhada ao visual: particulas e os tres projeteis do chefe agora usam azul eletrico. Durante `DASHING`, um escudo de plasma azul pulsante acompanha o ombro dianteiro sem alterar colisao ou invulnerabilidade.
+
+- Ajuste solicitado: impacto circular agora levanta uma nuvem de 30 particulas largas de poeira alem dos detritos; inicio da ombrada cria uma rajada dedicada de 26 faiscas laranja no ombro dianteiro.
+
+- Animacoes dos tres ataques aprovadas pelo usuario; faltavam efeitos de particulas.
+- Particulas leves desenhadas por codigo foram integradas: poeira e faiscas laranja acompanham a ombrada, detritos com energia ciano surgem no impacto circular e descargas ciano saem das duas palmas na rajada.
+- A ombrada emite um rastro curto durante o deslocamento. Efeitos sao visuais, temporarios e nao usam simulacao pesada de GPU.
+- Testes do chefe, salas e fluxo completo passaram, incluindo verificacao de criacao dos efeitos sem alterar dano ou estados.
+- Pendente: avaliacao manual da intensidade, cores e quantidade das particulas.
+
+- Tres ataques do Cobrador receberam animacoes proprias em quatro direcoes: `dash_4dir_v1.png` usa ombrada, `slam_4dir_v1.png` usa dois punhos no chao e `volley_4dir_v1.png` carrega/dispara energia ciano pelas palmas.
+- Preparacao usa quadros 0-1; execucao real usa quadro 2; recuperacao usa quadro 3. Dano circular, nascimento dos projeteis e movimento da investida continuam definidos pela logica aprovada.
+- Escala 0,46 e ponto fisico foram preservados nas tres folhas. Testes do chefe, salas e fluxo completo passaram; o teste de salas manteve apenas o aviso intermitente conhecido ao encerrar.
+- Pendente: avaliacao visual manual da leitura, sincronizacao e peso dos tres ataques.
+- Proximo bloco apos aprovacao: reacao de dano e destruicao do Cobrador.
+
+- Corrigida regressao visual observada pelo usuario: folhas 4x4 agora usam escala 0,46 e a base 2x2 usa 0,23, preservando exatamente o mesmo tamanho aparente nas trocas entre caminhada, parado e ataque.
+
+- Visual-base e tamanho do Cobrador aprovados pelo usuario.
+- `idle_4dir_v1.png` e `walk_4dir_v1.png` integradas: parado usa ciclo mecanico lento com nucleo pulsante; aproximacao usa passos curtos e pesados nas quatro direcoes.
+- Ataques continuam na pose-base ate receberem folhas especificas. Animacoes nao deslocam o corpo fisico e preservam velocidade, colisao e balanceamento.
+- Testes do chefe, salas e fluxo completo passaram. Aviso intermitente de objetos de audio ao encerrar o teste de salas continua sem falha funcional.
+- Pendente: avaliacao manual de peso, contato dos pes e velocidade dos ciclos.
+- Proximo bloco apos aprovacao: animacoes de rajada, investida e impacto circular.
+
+- Ferramenta temporaria de teste adicionada ao menu: `TEMPORARIO - TESTAR CHEFE` inicia diretamente o encontro final com vida cheia, sem protocolos e com os dois guardas reais. `INICIAR TENTATIVA` continua iniciando na primeira sala.
+- Validado: testes do chefe, salas e fluxo completo passaram; o fluxo completo confirmou o botao, sala final, chefe, guardas e estado inicial previsivel.
+
+- Reacao de dano e destruicao da Auditora aprovadas ao avancar para o proximo bloco.
+- Cobrador de Memorias recebeu folha-base estatica em quatro direcoes, derivada do conceito de tanque grafite e laranja reservado pelo usuario. O nucleo ciano diferencia o chefe dos inimigos comuns.
+- Visual geometrico provisório foi substituido; sombra, colisao, vida, movimento, tres ataques, reforcos e segunda fase foram preservados.
+- Testes do chefe, salas e fluxo completo passaram; o teste do chefe tambem confirmou quatro vistas e ausencia de movimento fisico pela troca visual.
+- Pendente: avaliacao manual de escala, ponto de apoio, leitura dos avisos e troca de direcao.
+- Proximo bloco apos aprovacao: parado e locomocao pesada do Cobrador.
+
+- Disparo funcional aprovado pelo usuario; a velocidade visual ainda pode receber ajuste fino posterior.
+- Auditora reage ao dano com recuo e oscilacao visual. Na derrota, ataque e colisao sao cancelados, ela sai do grupo de combate e executa queda, falha magenta e apagamento antes da remocao.
+- Testes de inimigos, salas, protocolos e fluxo completo passaram. O teste de salas repetiu o aviso intermitente de objetos de audio ao encerrar, sem falha funcional.
+- Pendente: avaliacao visual manual da reacao de dano e destruicao.
+- Proximo bloco: definir a proxima frente visual depois dessa avaliacao.
+
+- Auditora de Rede: locomocao e sequencia de disparo em quatro direcoes integradas.
+- `shoot_4dir_v1.png` apresenta arma baixa, levantamento, mira e disparo com recuo; os quadros seguem `WINDUP`, `_fire()` e `RECOVERY` sem alterar o balanceamento.
+- Testes executados: inimigos da Fase 4 e sequencia de salas da Fase 8 passaram.
+- Pendente: avaliacao visual manual da sincronizacao, alinhamento dos pes e leitura do clarão.
+- Proximo bloco: dano e destruicao da Auditora apos aprovacao do disparo.
+
 ## Engine e versão
 
 - Godot 4.7.2 estável, edição padrão sem C#.
@@ -179,3 +234,32 @@
 - Realizado pelo usuário: cronometragem final permaneceu próxima de 1 min 28 s, ligeiramente maior por causa da nova janela entre esquivas. Ritmo e dificuldade foram aprovados para o escopo atual.
 - Marco 0.2.1 preparado: executável Windows reexportado com recursos embutidos. A build iniciou em modo headless sem erros e seus metadados confirmaram `FileVersion` e `ProductVersion` 0.2.1.
 - Próximo bloco: preservar o balanceamento aprovado e iniciar a identidade visual dos inimigos e ambientes, substituindo recursos provisórios de forma incremental sem alterar as mecânicas.
+- Fase 12 iniciada: identidade visual dos inimigos. O primeiro passe será o inimigo corpo a corpo comum, com silhueta humanoide corporativa, armadura grafite, detalhes laranja e arma curta; a mecânica aprovada será preservada.
+- Conceito futuro aprovado: robô tanque industrial com ombreiras laranja e punhos pesados. Reservado como inimigo pesado/elite (`Penhorador Blindado`, nome provisório), sem implementação nesta fase e sem substituir o inimigo comum.
+- Fase 12.1 implementada para avaliação: o Executor de Cobrança substitui a forma geométrica do inimigo corpo a corpo por uma folha-base estática com quatro direções, armadura grafite, visor laranja e bastão de choque. Escala, colisão, vida, velocidade, alcance, dano e sinalização foram preservados.
+- Realizado: Godot importou a nova arte; doze testes automatizados passaram. O teste de inimigos também confirmou textura carregada e seleção correta das quatro vistas. Avisos intermitentes de `ObjectDB` e gravação de logs no ambiente protegido permanecem conhecidos, sem falhas funcionais.
+- Pendente do usuário: avaliar na arena escala, ponto de apoio, troca de direção e leitura do aviso de ataque antes de produzir animações.
+- Realizado pelo usuário: escala do Executor aprovada. Observado que a sombra circular do inimigo prejudicava o contato com o piso e que o cenário provisório ainda transmite sensação de flutuação.
+- Ajustado: sombra do Executor passou a ser elíptica, baixa e alinhada aos pés, seguindo a linguagem visual já usada no protagonista. A criação da arena definitiva permanece reservada ao bloco de ambientes.
+- Fase 12.2 implementada para avaliação: folhas `idle_4dir_v1.png` e `run_4dir_v1.png` do Executor foram criadas com quatro quadros em quatro direções. Parado usa respiração mecânica sutil; perseguição usa ciclo pesado alternando o contato dos pés.
+- As animações são apenas visuais: o código continua controlando posição, velocidade e colisão. Mudanças de estado reiniciam o ciclo, e preparação/recuperação permanecem paradas até receberem animação própria.
+- Realizado: Godot importou as duas folhas; doze testes automatizados passaram. O teste de inimigos confirmou carregamento, quatro direções e ausência de deslocamento físico causado pela animação.
+- Pendente do usuário: avaliar ritmo da corrida, estabilidade dos pés, escala e transição entre parado e perseguição.
+- Realizado pelo usuário: parado e corrida do Executor aprovados; durante o ataque, o retorno ao primeiro quadro de parado foi identificado como uma pose estática inadequada.
+- Fase 12.3 implementada para avaliação: folha `attack_4dir_v1.png` adicionada com preparação, levantamento do bastão, impacto e recuperação em quatro direções. Os quadros são derivados dos temporizadores reais de `WINDUP` e `RECOVERY`, preservando o instante do dano, aviso, alcance e balanceamento.
+- Realizado: Godot importou a folha de ataque; doze testes automatizados passaram. O teste do inimigo confirmou que a sinalização usa os quadros iniciais e que o impacto avança para os quadros finais sem alterar a lógica de dano.
+- Pendente do usuário: validar se preparação, golpe e recuperação parecem naturais e sincronizados com o círculo vermelho.
+- Realizado pelo usuário: sequência do ataque aprovada, mas o instante do contato ainda não transmitia força destrutiva suficiente.
+- Ajustado: impacto do Executor agora cria faíscas à frente do bastão, dois arcos elétricos expansivos no chão e compressão visual do corpo por 0,18 s. Dano, alcance, temporizadores e tremor global foram preservados.
+- Realizado: doze testes automatizados passaram. O teste do inimigo confirmou ativação do impacto visual e criação das faíscas junto ao quadro de contato.
+- Pendente do usuário: validar se o reforço visual transmite peso sem encobrir o jogador ou o círculo de perigo.
+- Ajustado a pedido do usuário: os dois arcos expansivos do impacto passaram de laranja para azul/ciano. Nenhuma outra propriedade visual ou mecânica foi alterada.
+- Fase 12.4 implementada para avaliação: dano do Executor combina o recuo existente com clarão e oscilação do sprite; derrota reutiliza o quadro atual em uma queda mecânica com compressão, faísca, sombra reduzida e apagamento em 0,42 s.
+- O golpe fatal continua alimentando protocolos antes de o Executor sair do combate. Colisão e ataques são desativados na derrota; salas, ondas e vitória não aguardam o término puramente visual.
+- Validado: testes direcionados de inimigos, ciclo da tentativa, salas, protocolos, chefe e fluxo completo passaram. Pendente avaliação visual do usuário.
+- Fase 12.4 aprovada pelo usuário.
+- Fase 12.5 iniciada: candidato visual v1 da `Auditora de Rede` criado em quatro direções, com silhueta leve, rifle de pulso, capa técnica curta e código de cor violeta/magenta. Ainda não integrado; aguarda aprovação visual.
+- Visual da Auditora aprovado e integrado: quatro vistas estáticas acompanham o jogador inclusive durante o recuo; forma geométrica foi substituída e sombra passou a ser elíptica. IA, distância, mira, projétil, vida e dano foram preservados.
+- Validado: testes direcionados de inimigos e sequência de salas passaram. Pendente avaliação manual de escala, ponto de apoio, troca de direção e leitura da linha de mira.
+- Fase 12.5 — locomoção implementada para avaliação: `idle_4dir_v1.png`, `advance_4dir_v1.png` e `backpedal_4dir_v1.png` conectadas ao cálculo de distância existente. A Auditora avança voltada ao alvo e usa passos próprios para recuar sem inverter a animação.
+- Validado: testes de inimigos e salas passaram; confirmadas folhas distintas, quatro direções e ausência de deslocamento físico causado pelos quadros. Pendente avaliação manual dos pés, capa e transições. Próximo bloco: levantar arma, mirar, disparar e recuperar.

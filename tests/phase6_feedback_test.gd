@@ -21,6 +21,9 @@ func _run() -> void:
 	for _frame in 5:
 		await physics_frame
 	_assert(melee.position.x > initial_position.x, "O inimigo deve recuar na direção do golpe.")
+	var melee_visual := melee.get_node("CharacterVisual") as Sprite2D
+	_assert(absf(melee_visual.rotation) > 0.001, "O Executor deve oscilar visualmente ao receber dano.")
+	_assert(melee_visual.modulate != Color.WHITE, "O Executor deve emitir um clarão ao receber dano.")
 
 	main._on_attack_landed(Vector2(40, 20))
 	_assert(main.hit_stop_left > 0.0, "O acerto deve iniciar uma pausa curta de impacto.")

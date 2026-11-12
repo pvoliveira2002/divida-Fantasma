@@ -118,6 +118,75 @@ Mantenha `STATUS_PROJETO.md` como um resumo atualizado, contendo:
 
 Atualize esse registro após entregas relevantes, sem transformá-lo em um histórico extenso de conversa. O código e os testes devem confirmar o estado registrado.
 
+## Leitura eficiente do projeto
+
+Este projeto Godot já possui vários sistemas funcionais. Trabalhe com contexto direcionado para reduzir consumo de tokens, preservar funcionalidades e evitar retrabalho.
+
+### Início de cada tarefa
+
+- Leia `AGENTS.md` e demais instruções aplicáveis.
+- Consulte `STATUS_PROJETO.md`, se existir, como orientação inicial.
+- Identifique a entrega solicitada e localize seus arquivos antes de ler implementações.
+- Não faça uma auditoria geral do projeto a cada sessão.
+
+### Busca antes da leitura
+
+- Use buscas por nomes de arquivos, classes, funções, sinais e referências.
+- Comece pelos caminhos encontrados e pelos trechos relevantes.
+- Leia arquivos completos quando isso for necessário para compreender estados, dependências ou efeitos da alteração.
+- Amplie a investigação conforme as evidências; não use um limite rígido de arquivos que prejudique a correção.
+
+### Arquivos a evitar
+
+- Exclua das buscas comuns caches, `.godot/`, builds, exportações, arquivos gerados e dependências de terceiros.
+- Não imprima arquivos binários, imagens codificadas ou grandes blocos de conteúdo irrelevante.
+- Consulte esses itens somente quando a tarefa depender deles.
+- Em cenas e recursos extensos, localize primeiro os nós, propriedades e referências envolvidos.
+
+### Alterações focadas
+
+- Reaproveite sistemas existentes.
+- Preserve mudanças do usuário e funcionalidades concluídas.
+- Evite refatorações amplas, reorganização de pastas e renomeações sem necessidade.
+- Antes de alterar uma função compartilhada, procure seus usos e verifique os efeitos nos sistemas relacionados.
+- Não confunda economia de leitura com permissão para adivinhar a implementação.
+
+### Registro curto e confiável
+
+Mantenha `STATUS_PROJETO.md` com:
+
+- Engine e versão.
+- Fase atual e próxima entrega.
+- Funcionalidades concluídas em resumo.
+- Problemas conhecidos.
+- Como executar e validar.
+- Caminhos dos arquivos principais de cada sistema.
+
+Se necessário, mantenha detalhes específicos em documentos separados e apenas referencie seus caminhos no resumo. Não copie código para o registro nem mantenha um histórico extenso de conversa. Verifique o código atual quando o registro puder estar desatualizado.
+
+### Primeiro mapeamento
+
+Se ainda não existir um mapa do projeto:
+
+- Identifique a estrutura por nomes de arquivos e buscas direcionadas.
+- Registre os pontos de entrada e os arquivos principais.
+- Aprofunde apenas o sistema da tarefa atual.
+- Complete o mapa progressivamente durante o trabalho, sem ler todo o projeto de uma vez.
+
+### Validação proporcional
+
+- Execute os testes e verificações pertinentes à mudança.
+- Amplie os testes quando houver alteração compartilhada, falha ou risco concreto de regressão.
+- Diferencie o que foi implementado, revisado e realmente executado.
+- Se não puder validar na engine, informe a limitação e forneça um teste manual curto.
+
+### Comunicação enxuta
+
+- Não reproduza arquivos inteiros na resposta quando já tiver feito a alteração.
+- Resuma o resultado, os testes, as limitações e o próximo passo.
+- Explique detalhes técnicos apenas quando ajudarem a avaliar uma decisão.
+- Continue até concluir a tarefa autorizada ou encontrar um impedimento real.
+
 ## Comunicação
 
 Fale em português claro. Explique decisões quando elas afetarem o trabalho do usuário, evitando repetir informações já estabelecidas.

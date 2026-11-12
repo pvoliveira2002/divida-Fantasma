@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 const BACKDROP := preload("res://scripts/menu_backdrop.gd")
+static var start_at_boss := false
 var settings_path := "user://preferences.cfg"
 var in_game := false
 var page := ""
@@ -82,6 +83,7 @@ func show_page(next_page: String) -> void:
 			_text("Recupere suas memórias. Enfrente o Cobrador.")
 			_text("3 salas · protocolos combináveis · confronto final")
 			_button("INICIAR TENTATIVA", start_run)
+			_button("TEMPORARIO - TESTAR CHEFE", start_boss_test)
 			_button("CONTROLES", func(): open_details("controls"))
 			_button("VOLUME", func(): open_details("volume"))
 			_button("SAIR", func(): get_tree().quit())
@@ -171,6 +173,12 @@ func attach_result_buttons(result: Control) -> void:
 
 
 func start_run() -> void:
+	start_at_boss = false
+	_change_scene("res://scenes/main.tscn")
+
+
+func start_boss_test() -> void:
+	start_at_boss = true
 	_change_scene("res://scenes/main.tscn")
 
 

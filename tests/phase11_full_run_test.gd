@@ -21,13 +21,14 @@ func _key(code: int) -> void:
 
 func _defeat_current_wave(arena) -> void:
 	for enemy in get_nodes_in_group("enemy"):
-		enemy.set_physics_process(false)
-		while not enemy.is_queued_for_deletion():
+		while is_instance_valid(enemy) and not enemy.is_queued_for_deletion():
 			arena.player.reset_combat_pose()
 			arena.player.start_attack(enemy.position - arena.player.position)
 			arena.player.attack_state = arena.player.AttackState.ACTIVE
 			arena.player._try_damage_target(enemy)
 			arena._finish_hit_stop()
+			if enemy.get("health") <= 0:
+				break
 	await _settle()
 
 func _run() -> void:
@@ -69,6 +70,20 @@ func _run() -> void:
 	_key(KEY_R)
 	await _settle()
 	_assert(current_scene.run_state == 0 and current_scene.player.current_health == 5, "R após derrota deve restaurar a partida.")
+	current_scene.menus.return_to_menu()
+	await _settle()
+	menu = current_scene
+	var boss_test_button_found := false
+	for control in menu.column.get_children():
+		if control is Button and control.text == "TEMPORARIO - TESTAR CHEFE":
+			boss_test_button_found = true
+	_assert(boss_test_button_found, "O menu deve oferecer o atalho temporario para testar o chefe.")
+	menu.start_boss_test()
+	await _settle()
+	arena = current_scene
+	_assert(arena.rooms.room_index == arena.rooms.BOSS_ROOM and is_instance_valid(arena.rooms.boss), "O atalho deve iniciar diretamente no confronto final.")
+	_assert(arena.player.current_health == arena.player.max_health and arena.protocols.ranks == [0,0,0], "O teste do chefe deve iniciar com vida cheia e sem protocolos.")
+	_assert(arena.rooms._enemies().size() == 3, "O teste deve manter o chefe e seus dois guardas reais.")
 	current_scene.queue_free()
 	await _settle()
 	await create_timer(0.3).timeout

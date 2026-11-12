@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/boss_attack_particles.gd" id="1_particles"]
+
+[node name="BossAttackParticles" type="Node2D"]
+z_index = 18
+script = ExtResource("1_particles")

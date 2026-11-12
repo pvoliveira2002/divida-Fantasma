@@ -155,6 +155,34 @@ func _transition() -> void:
 	transitioning = false
 
 
+func start_boss_test() -> void:
+	# Ferramenta temporaria: preserva o encontro real, pulando apenas as salas anteriores.
+	_clear_projectiles()
+	for enemy in _enemies():
+		enemy.queue_free()
+	arena.protocols.clear_room()
+	arena.player.reset_combat_pose()
+	arena.player.position = Vector2(-320, 0)
+	arena.player.facing_direction = Vector2.RIGHT
+	arena.player.visual_horizontal_direction = 1
+	arena.player._update_character_visual()
+	room_index = BOSS_ROOM
+	wave_index = 0
+	room_cleared = false
+	reward_selected = false
+	transitioning = false
+	gate_collision.set_deferred("disabled", false)
+	_spawn_encounter(BOSS_GUARDS)
+	boss = BOSS.instantiate()
+	boss.position = Vector2(180, 0)
+	boss.defeated.connect(_clear_projectiles)
+	boss.reinforcement_requested.connect(_spawn_boss_reinforcements)
+	arena.add_child(boss)
+	_update_labels()
+	arena.queue_redraw()
+	queue_redraw()
+
+
 func _spawn_encounter(encounter: Array) -> void:
 	for spawn in encounter:
 		var enemy = (RANGED if spawn[0] else MELEE).instantiate()

@@ -67,6 +67,9 @@ func _ready() -> void:
 	menus.in_game = true
 	add_child(menus)
 	menus.attach_result_buttons(result_overlay)
+	if GAME_MENU.start_at_boss:
+		GAME_MENU.start_at_boss = false
+		rooms.start_boss_test()
 	queue_redraw()
 
 

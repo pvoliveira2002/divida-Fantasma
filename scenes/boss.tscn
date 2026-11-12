@@ -1,6 +1,13 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/boss.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/characters/bosses/memory_collector/directional_base_v1.png" id="2_visual"]
+[ext_resource type="Texture2D" path="res://assets/characters/bosses/memory_collector/idle_4dir_v1.png" id="3_idle"]
+[ext_resource type="Texture2D" path="res://assets/characters/bosses/memory_collector/walk_4dir_v1.png" id="4_walk"]
+[ext_resource type="Texture2D" path="res://assets/characters/bosses/memory_collector/dash_4dir_v1.png" id="5_dash"]
+[ext_resource type="Texture2D" path="res://assets/characters/bosses/memory_collector/slam_4dir_v1.png" id="6_slam"]
+[ext_resource type="Texture2D" path="res://assets/characters/bosses/memory_collector/volley_4dir_v1.png" id="7_volley"]
+[ext_resource type="Script" path="res://scripts/boss_plasma_shield.gd" id="8_shield"]
 
 [sub_resource type="CircleShape2D" id="body"]
 radius = 34.0
@@ -10,6 +17,24 @@ z_index = 7
 collision_layer = 4
 collision_mask = 1
 script = ExtResource("1")
+base_texture = ExtResource("2_visual")
+idle_texture = ExtResource("3_idle")
+walk_texture = ExtResource("4_walk")
+dash_texture = ExtResource("5_dash")
+slam_texture = ExtResource("6_slam")
+volley_texture = ExtResource("7_volley")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("body")
+
+[node name="CharacterVisual" type="Sprite2D" parent="."]
+position = Vector2(0, -58)
+texture = ExtResource("2_visual")
+hframes = 2
+vframes = 2
+scale = Vector2(0.23, 0.23)
+
+[node name="PlasmaShield" type="Node2D" parent="."]
+z_index = 2
+visible = false
+script = ExtResource("8_shield")
