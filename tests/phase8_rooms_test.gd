@@ -14,16 +14,20 @@ func _run() -> void:
 	await physics_frame
 	var player = arena.get_node("Player")
 	var rooms = arena.rooms
+	_assert(arena.FLOOR_TEXTURE != null and arena.FLOOR_TEXTURE.get_size().x > 1000.0, "A arena deve carregar o piso cyberpunk em resolução suficiente.")
+	_assert(arena.floor_points == PackedVector2Array([Vector2(0, -300), Vector2(540, 0), Vector2(0, 300), Vector2(-540, 0)]), "O novo piso deve preservar exatamente os limites físicos aprovados.")
+	_assert(arena.ROOM_VISUAL_ACCENTS.size() == 4, "Cada sala e o confronto final devem possuir uma identidade visual própria.")
 	player.current_health = 3
 	player.position = Vector2(360, 0)
-	_assert(not rooms.try_advance(), "A porta não pode permitir passagem com inimigos vivos.")
-	_assert(not rooms.gate_collision.disabled, "A porta fechada deve ter colisão.")
+	_assert(not rooms.try_advance(), "A escotilha não pode permitir passagem com inimigos vivos.")
+	_assert(rooms.exit_hatch.visible and rooms.exit_hatch.state == rooms.exit_hatch.State.SEALED, "A sala deve iniciar com uma escotilha fechada integrada ao piso.")
+	_assert(rooms.exit_hatch.position in rooms.HATCH_ANCHORS[0], "A escotilha deve usar somente pontos seguros previamente definidos.")
 	for enemy in get_nodes_in_group("enemy"):
 		enemy.set_physics_process(false)
 	player.start_dodge(Vector2.RIGHT)
 	for frame in 14:
 		await physics_frame
-	_assert(player.position.x < 385.0, "A esquiva não deve atravessar a porta fechada.")
+	_assert(player.position.x < 525.0, "A remoção da porta lateral não pode permitir atravessar a borda da arena.")
 	for room_index in 3:
 		_assert(rooms.room_index == room_index, "A ordem das salas deve ser preservada.")
 		var projectile = load("res://scenes/enemy_projectile.tscn").instantiate()
@@ -39,26 +43,31 @@ func _run() -> void:
 			await physics_frame
 		_assert(rooms.room_cleared, "A sala deve liberar após o último inimigo.")
 		_assert(get_nodes_in_group("enemy_projectile").is_empty(), "Projéteis antigos devem ser removidos.")
-		_assert(not rooms.try_advance(), "A porta deve aguardar a escolha da melhoria.")
+		_assert(rooms.exit_hatch.state == rooms.exit_hatch.State.UNLOCKING, "A escotilha deve iniciar o desbloqueio ao concluir a sala.")
+		_assert(not rooms.try_advance(), "A escotilha deve aguardar a escolha da melhoria.")
 		_assert(arena.upgrades.choose(1), "Cada sala deve permitir uma escolha.")
+		await create_timer(0.6).timeout
+		_assert(rooms.exit_hatch.is_ready(), "A escolha deve abrir completamente a escotilha.")
 		_assert(arena.run_state == 0, "Salas intermediárias não devem dar vitória.")
 		player.position = Vector2.ZERO
-		_assert(not rooms.try_advance(), "A passagem exige proximidade da porta.")
-		player.position = Vector2(400, 0)
+		_assert(not rooms.try_advance(), "A passagem exige proximidade da escotilha.")
+		player.position = rooms.exit_hatch.position
 		player.start_attack(Vector2.RIGHT)
 		arena._start_hit_stop(0.045)
-		_assert(rooms.try_advance(), "Porta liberada deve permitir transição.")
+		_assert(rooms.try_advance(), "Escotilha aberta deve permitir iniciar a transição.")
 		_assert(not rooms.try_advance(), "Entrada repetida não pode pular salas.")
 		await process_frame
+		_assert(player.is_hatch_transitioning and not player.controls_enabled, "A entrada deve bloquear controles e iniciar o salto do protagonista.")
+		await create_timer(player.hatch_entry_duration + 0.12).timeout
 		await physics_frame
 		_assert(player.current_health == 3, "A passagem deve preservar a vida restante.")
 		_assert(player.position.distance_to(Vector2(-320, 0)) < 1.0, "Entrada deve posicionar o jogador em local seguro.")
 		_assert(player.hit_targets.is_empty() and player.attack_state == player.AttackState.READY, "Ataques e referências antigas devem ser limpos.")
 		_assert(arena.frozen_nodes.is_empty() and player.is_physics_processing(), "A transição deve limpar a pausa de impacto.")
 		_assert(arena.get_node_or_null("TrainingTarget") == null, "O alvo de treino deve ficar somente na primeira sala.")
-	_assert(rooms.room_index == 3 and is_instance_valid(rooms.boss), "A última porta deve levar ao chefe.")
+	_assert(rooms.room_index == 3 and is_instance_valid(rooms.boss), "A última escotilha deve levar ao chefe.")
 	_assert(get_nodes_in_group("enemy").size() == 3, "O encontro final deve conter o chefe e dois guardas.")
-	_assert(arena.run_state == 0 and not rooms.try_advance(), "O chefe vivo deve impedir vitória e passagem.")
+	_assert(arena.run_state == 0 and not rooms.try_advance() and not rooms.exit_hatch.visible, "O confronto final não deve exibir ou liberar outra escotilha.")
 	for enemy in get_nodes_in_group("enemy"):
 		if enemy != rooms.boss:
 			enemy.take_damage(999, Vector2.RIGHT)

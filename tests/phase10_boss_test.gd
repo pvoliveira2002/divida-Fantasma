@@ -143,8 +143,12 @@ func _run() -> void:
 	_assert(boss.health == 11, "Quatro socos e uma onda devem remover seis pontos de vida do chefe.")
 	boss.take_damage(99)
 	_assert(boss.state == boss.State.DEAD and not boss.take_damage(1), "Chefe derrotado não deve receber dano duplicado.")
+	_assert(boss.collision_layer == 0 and boss.collision_mask == 0, "A derrota deve desativar a colisão do chefe imediatamente.")
+	boss._physics_process(0.1)
+	_assert(is_instance_valid(boss) and boss.death_animation_time > 0.0, "O chefe deve permanecer brevemente para exibir sua destruição.")
+	boss._physics_process(boss.death_animation_duration)
 	await process_frame
-	_assert(not is_instance_valid(boss), "O chefe deve sair da cena após morrer.")
+	_assert(not is_instance_valid(boss), "O chefe deve sair da cena ao terminar a animação de destruição.")
 	var surviving_boss = load("res://scenes/boss.tscn").instantiate()
 	arena.add_child(surviving_boss)
 	player.receive_enemy_hit(999)

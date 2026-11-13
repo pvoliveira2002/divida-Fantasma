@@ -1,6 +1,48 @@
 # Status do projeto
 
-## Atualizacao atual - Fase 12.9
+## Atualizacao atual - Fase 13.3
+
+- Validacao completa antes do envio ao Git: os 12 testes automatizados disponiveis passaram em Godot 4.7.2, cobrindo movimento, ataque, esquiva, inimigos, feedback, ciclo de salas, protocolos, chefe, menu e partida completa. Os tres novos PNGs continuam como candidatos visuais nao integrados e, portanto, foram validados apenas quanto a dimensoes, grade, margens e transparencia.
+- Candidata do combo corpo a corpo criada em `assets/characters/protagonist_01/combo_front_right_16f_v1.png`: folha RGBA 1536 x 1536 com quatro golpes em 16 quadros, grade 4 x 4 e celulas exatas de 384 x 384. Direcao, identidade e lado anatomico do braco cibernetico foram preservados; todos os quadros e efeitos possuem margens transparentes. Ainda nao integrada ao sistema de ataque.
+- Candidata de animacao de salto criada em `assets/characters/protagonist_01/jump_front_right_8f_v1.png`: folha RGBA 2048 x 1024 com oito quadros em grade 4 x 2, celulas exatas de 512 x 512, direcao tres-quartos frontal para a direita e braco cibernetico consistente. O asset foi validado quanto a divisao, margens e transparencia, mas ainda nao foi integrado ao salto para a escotilha.
+- Novo candidato visual fechado criado em `assets/environments/hatch/cyber_hatch_closed_v1.png`: sprite isometrica isolada em PNG RGBA 1536 x 1024, com fundo, nevoa, brilho externo e sombra projetada removidos. A arte ainda nao foi integrada a cena; aguarda aprovacao visual e a futura preparacao dos estados de abertura.
+- Modelo da escotilha revisado a pedido do usuario: linguagem futurista de placas deslizantes substituida por uma peca industrial antiga e original, com moldura octogonal de ferro, tampa unica pesada, dobradicas, rebites, puxador, ferrugem, faixa de seguranca gasta e quatro travas reformadas com energia ciano.
+- Durante o desbloqueio as travas acendem e a tampa vibra sem abrir prematuramente. Apos a escolha do protocolo, a tampa recua para a dobradica superior, revela um vao escuro com escada e mantem o holograma `E`. Posicao, tempos, interacao e salto do protagonista foram preservados.
+- Validado apos a troca visual: `phase8_rooms_test.gd` e `phase11_full_run_test.gd` passaram. Pendente avaliacao manual de escala, peso da abertura, contraste da ferrugem e leitura do vao.
+
+- Revisao principal da Fase 13.3: porta lateral removida e substituida por escotilha de piso. Cada uma das tres salas comuns sorteia uma posicao entre quatro pontos seguros previamente definidos; a posicao permanece estavel durante a sala e a escotilha nao adiciona colisao.
+- Ao concluir a ultima onda, o aro inicia um desbloqueio parcial. A escolha do protocolo abre as duas placas por completo e ativa um sinal holografico com setas e icone `E`. A proximidade e a tecla `E` continuam obrigatorias; entradas repetidas sao bloqueadas.
+- Protagonista recebeu transicao visual de 0,72 s controlada por codigo: preparacao comprimida, salto curto ate o centro, arco, sombra acompanhando o deslocamento, reducao e desaparecimento dentro da escotilha. Controles e colisao sao suspensos somente durante a entrada; a camera permanece estavel porque o corpo fisico nao e deslocado durante o efeito.
+- A sala seguinte restaura corpo, sprite, controles, camera, vida e protocolos existentes no ponto seguro aprovado. O confronto final oculta a escotilha; a vitoria continua encerrando a partida diretamente.
+- Textos de ajuda, dicas da sala e tela de controles foram atualizados para a nova interacao.
+- Validado: `phase1_smoke_test.gd`, `phase5_run_cycle_test.gd`, `phase8_rooms_test.gd`, `phase9_upgrades_test.gd`, `phase10_boss_test.gd` e `phase11_full_run_test.gd` passaram. Cobertura inclui posicao autorizada, desbloqueio, abertura, proximidade, bloqueio de entrada dupla, animacao, restauracao e ausencia no chefe. Avisos intermitentes conhecidos de objetos ao encerrar o teste de salas permanecem sem falha funcional.
+- Pendente: avaliacao manual do tamanho, ritmo de abertura, clareza do holograma e naturalidade do salto. Proximo bloco apos aprovacao: Fase 13.4, iluminacao e efeitos ambientais leves.
+
+- Fase 13.2 aprovada pelo usuario: diferenciacao visual das salas mantem boa leitura durante a partida.
+- Porta provisoria substituida visualmente por dois pilares metalicos e cinco segmentos de energia pulsante. Ao escolher a melhoria, os segmentos retraem, desaparecem e revelam uma seta de saida; a colisao original continua sendo a unica barreira fisica.
+- Plataforma recebeu laterais inferiores escuras para criar espessura e quatro modulos tecnologicos baixos presos ao aro. Elementos usam a cor de identidade da sala e nao adicionam colisao, cobertura ou obstaculos.
+- Validado: `phase1_smoke_test.gd`, `phase8_rooms_test.gd`, `phase10_boss_test.gd` e `phase11_full_run_test.gd` passaram. O teste de salas cobre porta fechada, inicio da retracao, remocao diferida da colisao e transicao. Aviso intermitente conhecido de objetos apareceu somente ao encerrar esse teste.
+- Pendente: avaliacao manual da leitura da porta fechada/aberta, profundidade da plataforma e integracao dos modulos. Proximo bloco apos aprovacao: Fase 13.4, iluminacao e efeitos ambientais leves.
+
+- Quatro identidades visuais leves foram adicionadas sobre o piso aprovado, sem novas texturas ou obstaculos: Acesso usa ciano e canal de entrada; Arquivo usa violeta e nos de dados; Nucleo usa verde-agua e circuitos ramificados; confronto final usa laranja e chevrons industriais.
+- Cada sala aplica uma camada de cor muito suave, marcas nas regioes externas e contorno correspondente. O centro permanece limpo; avisos vermelhos de ataque, portas, personagens e projeteis continuam com prioridade visual.
+- Dimensoes, colisoes, spawns e logica de transicao nao foram alterados. A troca visual reutiliza o `queue_redraw()` ja executado nas transicoes.
+- Validado: `phase1_smoke_test.gd`, `phase8_rooms_test.gd`, `phase10_boss_test.gd` e `phase11_full_run_test.gd` passaram. O aviso conhecido de objetos de audio apareceu somente ao encerrar o teste de salas.
+- Pendente: avaliacao manual da diferenciacao entre as quatro salas e da leitura durante combate. Proximo bloco apos aprovacao: Fase 13.3, portas, paredes baixas e elementos tecnologicos sem colisao adicional.
+
+- Base visual da arena integrada em `assets/environments/arena/cyber_floor_base_v1.png`: plataforma industrial cyberpunk em losango, com chapas grafite, desgaste moderado, centro limpo e iluminacao ciano. A arte tem transparencia fora da plataforma e foi ajustada ao contorno existente de 1080 x 600.
+- Colisoes, dimensoes e area jogavel foram preservadas. O contorno ciano fino continua sendo desenhado sobre os quatro segmentos fisicos para manter limite visual e colisao coincidentes; a grade provisoria deixou de ser exibida.
+- Ajuste apos avaliacao manual: sombras do protagonista, Executor, Auditora e Cobrador agora combinam uma elipse ambiente curta com um nucleo escuro exatamente no ponto dos pes. O deslocamento inferior anterior foi removido para recuperar contato com o piso sem mover sprites, colisoes ou ataques.
+- Validado: importacao da textura concluida; `phase1_smoke_test.gd`, `phase8_rooms_test.gd` e `phase11_full_run_test.gd` passaram. O teste de salas agora tambem protege a resolucao da arte e os quatro pontos aprovados da arena. Aviso intermitente conhecido de objetos de audio apareceu ao encerrar o teste de salas.
+- Validado apos o ajuste de contato: `phase1_smoke_test.gd`, `phase4_enemies_test.gd` e `phase10_boss_test.gd` passaram.
+- Aprovado pelo usuario: contraste, aparencia e contato dos personagens com o piso. Fase 13.1 concluida.
+- Proximo bloco: Fase 13.2, variacoes visuais leves para Acesso, Arquivo, Nucleo e confronto final, preservando a base e a leitura do combate aprovadas.
+
+- Reacao de dano e destruicao do Cobrador implementadas sem alterar vida, dificuldade ou ataques. Golpes causam clarao e oscilacao curta na direcao do impacto; o golpe fatal interrompe ataque e colisao imediatamente, limpa os projeteis pelo sinal existente e inicia uma queda mecanica de 0,82 s.
+- A destruicao combina falha azul do nucleo, anel de energia expansivo, faiscas azuis, fragmentos laranja/grafite, compressao do corpo, reducao da sombra e apagamento. O chefe sai do grupo de combate no inicio, portanto a animacao nao bloqueia guardas, vitoria ou reinicio.
+- Validado: `phase10_boss_test.gd`, `phase8_rooms_test.gd` e `phase11_full_run_test.gd` passaram. O aviso intermitente conhecido de objetos de audio apareceu somente ao encerrar o teste de salas. Pendente: avaliacao visual manual da intensidade e duracao da destruicao.
+- Aprovado pelo usuario: reacao de dano e destruicao do Cobrador. Fase 12.10 concluida.
+- Proximo bloco: Fase 13.1, criar a base visual do piso e das bordas da arena para eliminar a sensacao de personagens flutuando, preservando colisoes e dimensoes atuais.
 
 - Escudo de plasma movido para uma camada acima do sprite, mantendo sombra e avisos abaixo do personagem. Velocidade dos tres plasmas do chefe aumentada de 240 para 270 px/s (+12,5%); dano, colisao e tempo de aviso permanecem iguais.
 

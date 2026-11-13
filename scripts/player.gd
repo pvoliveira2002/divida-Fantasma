@@ -6,6 +6,7 @@ signal attack_landed(world_position: Vector2)
 signal player_damaged
 signal dodge_started
 signal protocol_hit(target: Node2D, impact: Vector2, swing: int)
+signal hatch_entry_finished
 
 enum AttackState {
 	READY,
@@ -27,6 +28,7 @@ enum AttackState {
 @export var idle_breath_amount: float = 0.8
 @export var idle_breath_speed: float = 0.9
 @export var death_animation_duration: float = 0.45
+@export var hatch_entry_duration: float = 0.72
 
 @export_category("Vida")
 @export var max_health: int = 5
@@ -45,6 +47,7 @@ enum AttackState {
 
 @onready var attack_area: Area2D = $AttackArea
 @onready var attack_collision: CollisionShape2D = $AttackArea/CollisionShape2D
+@onready var body_collision: CollisionShape2D = $CollisionShape2D
 @onready var character_visual: Sprite2D = $CharacterVisual
 
 var facing_direction := Vector2.DOWN
@@ -69,6 +72,10 @@ var death_animation_time := 0.0
 var attack_serial := 0
 var circuit_visual_charge := 0
 var overload_visual_charge := 0
+var is_hatch_transitioning := false
+var hatch_entry_time := 0.0
+var hatch_entry_offset := Vector2.ZERO
+var hatch_entry_signal_sent := false
 
 const VISUAL_BASE_POSITION := Vector2(0.0, -29.0)
 const IDLE_VISUAL_SCALE := Vector2(0.12, 0.12)
@@ -105,6 +112,15 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if is_hatch_transitioning:
+		velocity = Vector2.ZERO
+		hatch_entry_time = minf(hatch_entry_time + delta, hatch_entry_duration)
+		_update_hatch_entry_visual()
+		queue_redraw()
+		if hatch_entry_time >= hatch_entry_duration and not hatch_entry_signal_sent:
+			hatch_entry_signal_sent = true
+			hatch_entry_finished.emit()
+		return
 	if is_dead:
 		velocity = Vector2.ZERO
 		death_animation_time = minf(death_animation_time + delta, maxf(death_animation_duration, 0.001))
@@ -213,6 +229,10 @@ func _die() -> void:
 
 
 func reset_combat_pose() -> void:
+	is_hatch_transitioning = false
+	hatch_entry_time = 0.0
+	hatch_entry_offset = Vector2.ZERO
+	hatch_entry_signal_sent = false
 	velocity = Vector2.ZERO
 	attack_state = AttackState.READY
 	attack_time_left = 0.0
@@ -220,9 +240,52 @@ func reset_combat_pose() -> void:
 	is_dodging = false
 	dodge_time_left = 0.0
 	damage_flash_left = 0.0
+	body_collision.set_deferred("disabled", false)
 	attack_collision.set_deferred("disabled", true)
+	character_visual.visible = true
+	character_visual.modulate = Color.WHITE
 	_update_character_visual()
 	queue_redraw()
+
+
+func begin_hatch_entry(hatch_world_position: Vector2) -> bool:
+	if is_dead or is_hatch_transitioning or not controls_enabled:
+		return false
+	reset_combat_pose()
+	controls_enabled = false
+	is_hatch_transitioning = true
+	hatch_entry_time = 0.0
+	hatch_entry_offset = to_local(hatch_world_position)
+	hatch_entry_signal_sent = false
+	if hatch_entry_offset.length_squared() > 0.001:
+		facing_direction = hatch_entry_offset.normalized()
+		if absf(facing_direction.x) > 0.1:
+			visual_horizontal_direction = 1 if facing_direction.x > 0.0 else -1
+	body_collision.set_deferred("disabled", true)
+	attack_collision.set_deferred("disabled", true)
+	_update_hatch_entry_visual()
+	queue_redraw()
+	return true
+
+
+func _update_hatch_entry_visual() -> void:
+	var progress := clampf(hatch_entry_time / maxf(hatch_entry_duration, 0.001), 0.0, 1.0)
+	var travel := smoothstep(0.18, 0.72, progress)
+	var leap_progress := clampf((progress - 0.14) / 0.66, 0.0, 1.0)
+	var arc_height := sin(leap_progress * PI) * 28.0
+	var disappear := smoothstep(0.70, 1.0, progress)
+	var crouch := sin(clampf(progress / 0.20, 0.0, 1.0) * PI)
+	var faces_down := facing_direction.y >= 0.0
+	var direction_row := (0 if visual_horizontal_direction > 0 else 2) if faces_down else (1 if visual_horizontal_direction > 0 else 3)
+	character_visual.texture = run_texture
+	character_visual.hframes = 4
+	character_visual.vframes = 4
+	character_visual.frame = direction_row * 4 + (0 if progress < 0.20 else 2)
+	character_visual.position = VISUAL_BASE_POSITION + hatch_entry_offset * travel + Vector2(0.0, -arc_height + disappear * 9.0)
+	var vanish_scale := lerpf(1.0, 0.18, disappear)
+	character_visual.scale = RUN_VISUAL_SCALE * Vector2(1.0 + crouch * 0.10, 1.0 - crouch * 0.18) * vanish_scale
+	character_visual.rotation = facing_direction.x * sin(leap_progress * PI) * 0.12
+	character_visual.modulate = Color(0.72, 1.0, 1.0, 1.0 - disappear)
 
 
 func _update_dodge(delta: float) -> void:
@@ -383,9 +446,17 @@ func _update_death_visual() -> void:
 
 
 func _draw() -> void:
-	# Formas provisórias: sombra, corpo e indicador da direção atual.
-	draw_set_transform(Vector2(0, 8), 0.0, Vector2(1.0, 0.45))
-	draw_circle(Vector2.ZERO, 24.0, Color(0.0, 0.0, 0.0, 0.35))
+	# Duas camadas mantêm uma sombra suave sem separar visualmente as solas do piso.
+	var shadow_center := Vector2.ZERO
+	var shadow_size := 1.0
+	if is_hatch_transitioning:
+		var hatch_progress := clampf(hatch_entry_time / maxf(hatch_entry_duration, 0.001), 0.0, 1.0)
+		shadow_center = hatch_entry_offset * smoothstep(0.18, 0.72, hatch_progress)
+		shadow_size = lerpf(1.0, 0.08, smoothstep(0.62, 1.0, hatch_progress))
+	draw_set_transform(shadow_center + Vector2(0.0, 1.0), 0.0, Vector2(shadow_size, 0.28 * shadow_size))
+	draw_circle(Vector2.ZERO, 22.0, Color(0.0, 0.0, 0.0, 0.24))
+	draw_set_transform(shadow_center + Vector2(0.0, -1.0), 0.0, Vector2(shadow_size, 0.18 * shadow_size))
+	draw_circle(Vector2.ZERO, 12.0, Color(0.0, 0.0, 0.0, 0.52))
 	draw_set_transform(Vector2.ZERO)
 
 	if attack_state != AttackState.READY:

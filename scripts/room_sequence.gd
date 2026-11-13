@@ -5,10 +5,15 @@ signal sequence_completed
 const MELEE := preload("res://scenes/melee_enemy.tscn")
 const RANGED := preload("res://scenes/ranged_enemy.tscn")
 const BOSS := preload("res://scenes/boss.tscn")
+const EXIT_HATCH_SCRIPT := preload("res://scripts/exit_hatch.gd")
 const BOSS_ROOM := 3
-const EXIT_POSITION := Vector2(400, 0)
 const ROOM_NAMES := ["ACESSO", "ARQUIVO", "NÚCLEO", "COBRADOR DE MEMÓRIAS"]
 const ROOM_COLORS := [Color("101a32"), Color("201731"), Color("102a2c"), Color("291a24")]
+const HATCH_ANCHORS := [
+	[Vector2(-225, 112), Vector2(-35, -158), Vector2(235, 108), Vector2(285, -82)],
+	[Vector2(-250, -92), Vector2(-75, 155), Vector2(170, -135), Vector2(275, 88)],
+	[Vector2(-275, 72), Vector2(-95, -150), Vector2(155, 145), Vector2(285, -68)],
+]
 # Three authored waves per room. Room 0 wave 0 is preplaced in main.tscn.
 const ROOM_WAVES := [
 	[
@@ -34,27 +39,23 @@ var wave_index := 0
 var room_cleared := false
 var reward_selected := false
 var transitioning := false
-var gate_collision: CollisionShape2D
 var boss: CharacterBody2D
+var exit_hatch: Node2D
+var hatch_random := RandomNumberGenerator.new()
 @onready var arena = get_parent()
 
 
 func _ready() -> void:
-	var gate := StaticBody2D.new()
-	gate.position = EXIT_POSITION
-	gate.collision_layer = 1
-	gate.collision_mask = 0
-	add_child(gate)
-	gate_collision = CollisionShape2D.new()
-	var shape := RectangleShape2D.new()
-	shape.size = Vector2(18, 90)
-	gate_collision.shape = shape
-	gate.add_child(gate_collision)
+	hatch_random.randomize()
+	exit_hatch = EXIT_HATCH_SCRIPT.new()
+	exit_hatch.name = "ExitHatch"
+	add_child(exit_hatch)
+	_place_hatch_for_room()
 	_update_labels()
 	queue_redraw()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_update_boss_hud()
 	if arena.run_state != arena.RunState.PLAYING or transitioning:
 		return
@@ -69,6 +70,7 @@ func _process(_delta: float) -> void:
 			if room_index == BOSS_ROOM:
 				sequence_completed.emit()
 			else:
+				exit_hatch.begin_unlock()
 				arena.upgrades.offer(room_index)
 		_update_labels()
 		queue_redraw()
@@ -78,7 +80,7 @@ func on_upgrade_chosen(completed_room: int) -> void:
 	if completed_room != room_index or not room_cleared or reward_selected:
 		return
 	reward_selected = true
-	gate_collision.set_deferred("disabled", true)
+	exit_hatch.open()
 	_update_labels()
 	queue_redraw()
 
@@ -108,11 +110,29 @@ func _clear_projectiles() -> void:
 func try_advance() -> bool:
 	if transitioning or not room_cleared or not reward_selected or not _enemies().is_empty() or arena.run_state != arena.RunState.PLAYING:
 		return false
-	if room_index >= ROOM_NAMES.size() - 1 or arena.player.position.distance_to(EXIT_POSITION) > 85.0:
+	if room_index >= BOSS_ROOM or not is_instance_valid(exit_hatch) or not exit_hatch.is_ready():
+		return false
+	if arena.player.global_position.distance_to(exit_hatch.global_position) > 82.0:
 		return false
 	transitioning = true
-	_transition.call_deferred()
+	_begin_hatch_transition.call_deferred()
 	return true
+
+
+func _begin_hatch_transition() -> void:
+	if arena.run_state != arena.RunState.PLAYING or arena.player.is_dead or not exit_hatch.is_ready():
+		transitioning = false
+		return
+	arena._finish_hit_stop()
+	if not arena.player.begin_hatch_entry(exit_hatch.global_position):
+		transitioning = false
+		return
+	exit_hatch.begin_entry()
+	await arena.player.hatch_entry_finished
+	if arena.run_state != arena.RunState.PLAYING or arena.player.is_dead:
+		transitioning = false
+		return
+	_transition()
 
 
 func _transition() -> void:
@@ -126,6 +146,7 @@ func _transition() -> void:
 		if child.scene_file_path in ["res://scenes/hit_spark.tscn", "res://scenes/training_target.tscn"]:
 			child.queue_free()
 	arena.player.reset_combat_pose()
+	arena.player.controls_enabled = true
 	arena.player.position = Vector2(-320, 0)
 	arena.player.facing_direction = Vector2.RIGHT
 	arena.player.visual_horizontal_direction = 1
@@ -138,7 +159,7 @@ func _transition() -> void:
 	wave_index = 0
 	room_cleared = false
 	reward_selected = false
-	gate_collision.disabled = false
+	_place_hatch_for_room()
 	if room_index == BOSS_ROOM:
 		_spawn_encounter(BOSS_GUARDS)
 	else:
@@ -171,7 +192,8 @@ func start_boss_test() -> void:
 	room_cleared = false
 	reward_selected = false
 	transitioning = false
-	gate_collision.set_deferred("disabled", false)
+	exit_hatch.visible = false
+	exit_hatch.set_process(false)
 	_spawn_encounter(BOSS_GUARDS)
 	boss = BOSS.instantiate()
 	boss.position = Vector2(180, 0)
@@ -181,6 +203,20 @@ func start_boss_test() -> void:
 	_update_labels()
 	arena.queue_redraw()
 	queue_redraw()
+
+
+func _place_hatch_for_room() -> void:
+	if not is_instance_valid(exit_hatch):
+		return
+	if room_index >= BOSS_ROOM:
+		exit_hatch.visible = false
+		exit_hatch.set_process(false)
+		return
+	var anchors: Array = HATCH_ANCHORS[room_index]
+	var anchor: Vector2 = anchors[hatch_random.randi_range(0, anchors.size() - 1)]
+	var accent: Color = arena.ROOM_VISUAL_ACCENTS[room_index]
+	exit_hatch.set_process(true)
+	exit_hatch.configure(anchor, accent)
 
 
 func _spawn_encounter(encounter: Array) -> void:
@@ -208,11 +244,11 @@ func _update_labels() -> void:
 		arena.get_node("Interface/Phase").text = "CONFRONTO FINAL"
 	var hint := "Elimine a onda atual. Novos sinais hostis podem entrar na sala."
 	if room_cleared:
-		hint = "Instale um protocolo para continuar."
+		hint = "Escotilha localizada. Instale um protocolo para concluir o desbloqueio."
 		if reward_selected:
-			hint = "Porta liberada à direita — aproxime-se e pressione E."
+			hint = "Escotilha aberta — siga o sinal holográfico e pressione E."
 		if reward_selected and room_index == BOSS_ROOM - 1:
-			hint = "Chefe à frente — aproxime-se da porta e pressione E."
+			hint = "Rota para o confronto final aberta — entre na escotilha."
 	if room_index == BOSS_ROOM:
 		hint = "Derrote o Cobrador e seus dois guardas. Anel ciano: janela de contra-ataque."
 	arena.get_node("Interface/RoomHint").text = hint
@@ -235,13 +271,6 @@ func _update_boss_hud() -> void:
 
 func _draw() -> void:
 	var color := Color("2fffd5") if reward_selected else Color("ff496c")
-	draw_rect(Rect2(EXIT_POSITION - Vector2(14, 50), Vector2(28, 100)), Color("080d19"))
-	draw_rect(Rect2(EXIT_POSITION - Vector2(14, 50), Vector2(28, 100)), color, false, 3.0)
-	if not reward_selected:
-		for y in [-30, -10, 10, 30]:
-			draw_line(EXIT_POSITION + Vector2(-12, y), EXIT_POSITION + Vector2(12, y), color, 3.0)
-	else:
-		draw_polyline(PackedVector2Array([EXIT_POSITION + Vector2(-8, -14), EXIT_POSITION + Vector2(8, 0), EXIT_POSITION + Vector2(-8, 14)]), color, 3.0)
 	# Distinct floor markings identify each authored room without blocking AI paths.
 	for index in range(room_index + 1):
 		var center := Vector2(-80 + index * 80, -210)

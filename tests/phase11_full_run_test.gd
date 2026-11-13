@@ -54,8 +54,10 @@ func _run() -> void:
 			_key([KEY_1, KEY_2, KEY_3][room_index])
 			await _settle()
 			_assert(arena.protocols.ranks[room_index] == 1, "Atalho deve instalar cada protocolo.")
-			arena.player.position = Vector2(400, 0)
+			await create_timer(0.6).timeout
+			arena.player.position = arena.rooms.exit_hatch.position
 			_key(KEY_E)
+			await create_timer(arena.player.hatch_entry_duration + 0.16).timeout
 			await _settle()
 	_assert(arena.run_state == arena.RunState.VICTORY and arena.result_overlay.visible, "Derrotar encontro final deve mostrar vitória.")
 	arena.menus.return_to_menu()

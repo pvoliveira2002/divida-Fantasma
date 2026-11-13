@@ -74,9 +74,10 @@ func _run() -> void:
 		_assert(victory_run.upgrades.choose(1), "Cada sala deve oferecer uma melhoria antes de continuar.")
 		if room_index < 3:
 			_assert(victory_run.run_state == 0, "Limpar uma sala intermediária não deve encerrar a tentativa.")
-			victory_run.get_node("Player").position = Vector2(400, 0)
-			_assert(victory_run.rooms.try_advance(), "A porta liberada deve permitir avançar.")
-			await process_frame
+			await create_timer(0.6).timeout
+			victory_run.get_node("Player").position = victory_run.rooms.exit_hatch.position
+			_assert(victory_run.rooms.try_advance(), "A escotilha aberta deve permitir avançar.")
+			await create_timer(victory_run.player.hatch_entry_duration + 0.12).timeout
 			await physics_frame
 	_assert(victory_run.run_state == 0, "As três salas devem levar ao chefe, sem vitória antecipada.")
 	for enemy in get_nodes_in_group("enemy"):

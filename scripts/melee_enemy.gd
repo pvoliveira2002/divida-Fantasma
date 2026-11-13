@@ -212,10 +212,12 @@ func _leave_combat_group() -> void:
 
 
 func _draw() -> void:
-	# Ground contact follows the same flattened isometric shadow used by the player.
+	# Sombra ambiente e núcleo de contato ficam alinhados ao ponto físico dos pés.
 	var death_progress := clampf(death_animation_time / maxf(death_animation_duration, 0.001), 0.0, 1.0) if state == State.DEAD else 0.0
-	draw_set_transform(Vector2(0.0, 8.0), 0.0, Vector2(1.0 - death_progress * 0.35, 0.42 - death_progress * 0.16))
-	draw_circle(Vector2.ZERO, 24.0, Color(0.0, 0.0, 0.0, 0.35 * (1.0 - death_progress)))
+	draw_set_transform(Vector2(0.0, 1.0), 0.0, Vector2(1.0 - death_progress * 0.35, 0.28 - death_progress * 0.10))
+	draw_circle(Vector2.ZERO, 22.0, Color(0.0, 0.0, 0.0, 0.24 * (1.0 - death_progress)))
+	draw_set_transform(Vector2(0.0, -1.0), 0.0, Vector2(1.0 - death_progress * 0.42, 0.17 - death_progress * 0.07))
+	draw_circle(Vector2.ZERO, 12.0, Color(0.0, 0.0, 0.0, 0.50 * (1.0 - death_progress)))
 	draw_set_transform(Vector2.ZERO)
 	if state == State.WINDUP:
 		draw_circle(Vector2.ZERO, attack_range, Color(1.0, 0.2, 0.15, 0.12))

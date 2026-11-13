@@ -58,9 +58,10 @@ func _run() -> void:
 			_assert(target.health == 20 - player.attack_damage, "Dano melhorado deve ocorrer uma única vez por golpe.")
 			target.queue_free()
 			await process_frame
-			player.position = Vector2(400, 0)
-			_assert(arena.rooms.try_advance(), "A escolha deve liberar a passagem.")
-			await process_frame
+			await create_timer(0.6).timeout
+			player.position = arena.rooms.exit_hatch.position
+			_assert(arena.rooms.try_advance(), "A escolha deve liberar a escotilha.")
+			await create_timer(player.hatch_entry_duration + 0.12).timeout
 			await physics_frame
 			_assert(arena.protocols.ranks == upgrades.ranks, "Protocolos devem permanecer entre salas.")
 	_assert(is_equal_approx(player.dodge_cooldown, original_cooldown), "Protocolos não devem alterar a recarga básica.")

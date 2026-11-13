@@ -28,6 +28,7 @@ const ATTACK_PARTICLES := preload("res://scenes/boss_attack_particles.tscn")
 @export var base_sheet_scale := Vector2(0.23, 0.23)
 @export var animation_sheet_scale := Vector2(0.46, 0.46)
 @export var attack_contact_pose_duration := 0.18
+@export var death_animation_duration := 0.82
 
 var health: int
 var state := State.APPROACH
@@ -47,6 +48,14 @@ var visual_animation_time := 0.0
 var visual_animation_frame := 0
 var dash_particle_time := 0.0
 var dash_plasma_phase := 0.0
+var damage_direction := Vector2.ZERO
+var death_animation_time := 0.0
+var death_fall_direction := 1.0
+var death_visual_texture: Texture2D
+var death_visual_frame := 0
+var death_visual_hframes := 4
+var death_visual_vframes := 4
+var death_visual_scale := Vector2.ONE
 @onready var character_visual: Sprite2D = $CharacterVisual
 
 
@@ -58,10 +67,17 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if state == State.DEAD or not is_instance_valid(target) or target.is_dead:
-		return
 	flash_left = maxf(0.0, flash_left - delta)
 	impact_left = maxf(0.0, impact_left - delta)
+	if state == State.DEAD:
+		death_animation_time = minf(death_animation_time + delta, death_animation_duration)
+		_update_death_visual()
+		queue_redraw()
+		if death_animation_time >= death_animation_duration:
+			queue_free()
+		return
+	if not is_instance_valid(target) or target.is_dead:
+		return
 	state_time -= delta
 	match state:
 		State.APPROACH:
@@ -172,6 +188,28 @@ func _update_character_visual(delta: float = 0.0) -> void:
 		character_visual.modulate = Color(1.18, 0.82, 0.72, 1.0)
 	else:
 		character_visual.modulate = Color.WHITE
+	if flash_left > 0.0:
+		var damage_strength := clampf(flash_left / 0.12, 0.0, 1.0)
+		character_visual.position = Vector2(0.0, -58.0) - damage_direction * 7.0 * damage_strength
+		character_visual.rotation = sin((1.0 - damage_strength) * TAU) * 0.08 * damage_strength
+	else:
+		character_visual.position = Vector2(0.0, -58.0)
+		character_visual.rotation = 0.0
+
+
+func _update_death_visual() -> void:
+	var progress := clampf(death_animation_time / maxf(death_animation_duration, 0.001), 0.0, 1.0)
+	var fall := smoothstep(0.06, 0.72, progress)
+	character_visual.texture = death_visual_texture
+	character_visual.hframes = death_visual_hframes
+	character_visual.vframes = death_visual_vframes
+	character_visual.frame = death_visual_frame
+	character_visual.position = Vector2(0.0, -58.0) + Vector2(death_fall_direction * 13.0, 30.0) * fall
+	character_visual.rotation = death_fall_direction * 0.62 * fall
+	character_visual.scale = death_visual_scale * Vector2(1.0 + 0.12 * fall, lerpf(1.0, 0.55, fall))
+	var energy_flicker := 0.72 + sin(progress * TAU * 9.0) * 0.20 if progress < 0.62 else 1.0
+	var fade := clampf((progress - 0.70) / 0.30, 0.0, 1.0)
+	character_visual.modulate = Color(energy_flicker, energy_flicker, 1.15, 1.0).lerp(Color(0.20, 0.38, 0.52, 0.0), fade)
 
 
 func _execute_attack() -> void:
@@ -218,11 +256,12 @@ func _enter_recovery() -> void:
 	velocity = Vector2.ZERO
 
 
-func take_damage(amount: int, _hit_direction := Vector2.ZERO) -> bool:
+func take_damage(amount: int, hit_direction := Vector2.ZERO) -> bool:
 	if state == State.DEAD:
 		return false
 	health = maxi(0, health - amount)
-	flash_left = 0.10
+	damage_direction = hit_direction.normalized()
+	flash_left = 0.12
 	if health > 0 and reinforcement_stage == 0 and health * 3 <= max_health * 2:
 		reinforcement_stage = 1
 		reinforcement_requested.emit(reinforcement_stage)
@@ -232,16 +271,36 @@ func take_damage(amount: int, _hit_direction := Vector2.ZERO) -> bool:
 	# The second phase changes pacing only; warning time and damage stay readable.
 	enraged = health > 0 and health * 2 < max_health
 	if health == 0:
-		state = State.DEAD
-		velocity = Vector2.ZERO
-		defeated.emit()
-		queue_free()
+		_begin_death()
 	queue_redraw()
 	return true
 
 
+func _begin_death() -> void:
+	state = State.DEAD
+	velocity = Vector2.ZERO
+	impact_left = 0.0
+	death_animation_time = 0.0
+	death_fall_direction = 1.0 if damage_direction.x >= 0.0 else -1.0
+	death_visual_texture = character_visual.texture
+	death_visual_frame = character_visual.frame
+	death_visual_hframes = character_visual.hframes
+	death_visual_vframes = character_visual.vframes
+	death_visual_scale = character_visual.scale
+	collision_layer = 0
+	collision_mask = 0
+	$CollisionShape2D.set_deferred("disabled", true)
+	remove_from_group("enemy")
+	_spawn_attack_particles(4, global_position + Vector2(0.0, -42.0), -damage_direction)
+	defeated.emit()
+
+
 func _draw() -> void:
 	var danger := Color("ff496c")
+	var death_progress := clampf(death_animation_time / maxf(death_animation_duration, 0.001), 0.0, 1.0) if state == State.DEAD else 0.0
+	if state == State.DEAD:
+		var pulse_alpha := (1.0 - death_progress) * (0.35 + absf(sin(death_progress * TAU * 4.0)) * 0.35)
+		draw_arc(Vector2(0.0, -42.0), 34.0 + death_progress * 76.0, 0.0, TAU, 48, Color(0.25, 0.72, 1.0, pulse_alpha), 5.0, true)
 	if state == State.WINDUP:
 		var progress := 1.0 - clampf(state_time / windup_duration, 0.0, 1.0)
 		match attack:
@@ -261,8 +320,10 @@ func _draw() -> void:
 					draw_line(Vector2.ZERO, locked_direction.rotated(angle) * 420.0, Color(danger, 0.65), 2, true)
 	if impact_left > 0:
 		draw_arc(to_local(attack_origin), slam_radius, 0, TAU, 64, Color(danger, impact_left / 0.22), 7, true)
-	draw_set_transform(Vector2(0, 12), 0, Vector2(1, 0.45))
-	draw_circle(Vector2.ZERO, 48, Color(0, 0, 0, 0.48))
+	draw_set_transform(Vector2(0.0, 2.0), 0.0, Vector2(1.0 - death_progress * 0.35, 0.30 - death_progress * 0.11))
+	draw_circle(Vector2.ZERO, 42.0, Color(0.0, 0.0, 0.0, 0.30 * (1.0 - death_progress)))
+	draw_set_transform(Vector2(0.0, -1.0), 0.0, Vector2(1.0 - death_progress * 0.42, 0.17 - death_progress * 0.07))
+	draw_circle(Vector2.ZERO, 25.0, Color(0.0, 0.0, 0.0, 0.54 * (1.0 - death_progress)))
 	draw_set_transform(Vector2.ZERO)
 	if state == State.RECOVERY:
 		draw_arc(Vector2.ZERO, 48, 0, TAU, 40, Color("49f4ff"), 2, true)

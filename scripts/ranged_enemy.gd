@@ -241,8 +241,10 @@ func _update_death_visual() -> void:
 
 func _draw() -> void:
 	var death_progress := clampf(death_animation_time / maxf(death_animation_duration, 0.001), 0.0, 1.0) if state == State.DEAD else 0.0
-	draw_set_transform(Vector2(0.0, 8.0), 0.0, Vector2(1.0 - death_progress * 0.42, 0.42 - death_progress * 0.18))
-	draw_circle(Vector2.ZERO, 22.0, Color(0.0, 0.0, 0.0, 0.34 * (1.0 - death_progress)))
+	draw_set_transform(Vector2(0.0, 1.0), 0.0, Vector2(1.0 - death_progress * 0.42, 0.27 - death_progress * 0.10))
+	draw_circle(Vector2.ZERO, 19.0, Color(0.0, 0.0, 0.0, 0.23 * (1.0 - death_progress)))
+	draw_set_transform(Vector2(0.0, -1.0), 0.0, Vector2(1.0 - death_progress * 0.48, 0.16 - death_progress * 0.06))
+	draw_circle(Vector2.ZERO, 10.0, Color(0.0, 0.0, 0.0, 0.48 * (1.0 - death_progress)))
 	draw_set_transform(Vector2.ZERO)
 	if state == State.DEAD:
 		var glitch_alpha := 1.0 - death_progress

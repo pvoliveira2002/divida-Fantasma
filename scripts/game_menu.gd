@@ -99,7 +99,7 @@ func show_page(next_page: String) -> void:
 			_text("Reiniciar ou voltar ao menu encerra a tentativa atual.", 16)
 		"controls":
 			_title("CONTROLES")
-			_text("WASD — mover\nClique esquerdo — atacar na direção do mouse\nEspaço — atacar na direção atual\nShift / Ctrl — esquivar\n1 / 2 / 3 ou clique — instalar protocolo\nE — atravessar uma porta liberada\nEsc — pausar / continuar\nR — nova tentativa após vitória ou derrota", 20)
+			_text("WASD — mover\nClique esquerdo — atacar na direção do mouse\nEspaço — atacar na direção atual\nShift / Ctrl — esquivar\n1 / 2 / 3 ou clique — instalar protocolo\nE — entrar em uma escotilha aberta\nEsc — pausar / continuar\nR — nova tentativa após vitória ou derrota", 20)
 			_text("Avisos vermelhos: perigo. Anel ciano do chefe: contra-ataque.", 17)
 			_button("VOLTAR", func(): show_page(return_page))
 		"volume":

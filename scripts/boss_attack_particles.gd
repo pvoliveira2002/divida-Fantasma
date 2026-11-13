@@ -1,6 +1,6 @@
 extends Node2D
 
-enum Effect { DASH, SLAM, VOLLEY, SHOULDER }
+enum Effect { DASH, SLAM, VOLLEY, SHOULDER, BREAKDOWN }
 
 var particles: Array[Dictionary] = []
 var effect := Effect.DASH
@@ -25,6 +25,8 @@ func setup(kind: int, attack_direction: Vector2) -> void:
 			_emit_volley_energy()
 		Effect.SHOULDER:
 			_emit_shoulder_sparks()
+		Effect.BREAKDOWN:
+			_emit_breakdown()
 	queue_redraw()
 
 
@@ -81,6 +83,20 @@ func _emit_shoulder_sparks() -> void:
 		_add_particle(velocity, random.randf_range(0.16, 0.34), random.randf_range(2.0, 3.8), color, Vector2(0.0, 65.0))
 
 
+func _emit_breakdown() -> void:
+	# Estouro misto: energia do nucleo, faiscas da armadura e fragmentos pesados.
+	for index in 34:
+		var radial := Vector2.RIGHT.rotated(TAU * float(index) / 34.0 + random.randf_range(-0.16, 0.16))
+		var velocity := radial * random.randf_range(105.0, 310.0) + Vector2(0.0, random.randf_range(-95.0, 10.0))
+		var color := Color("b9efff") if index % 3 == 0 else Color("3388ff")
+		_add_particle(velocity, random.randf_range(0.30, 0.62), random.randf_range(2.0, 4.5), color, Vector2(0.0, 150.0))
+	for index in 18:
+		var fragment_direction := Vector2.RIGHT.rotated(TAU * float(index) / 18.0 + random.randf_range(-0.22, 0.22))
+		var fragment_velocity := fragment_direction * random.randf_range(65.0, 205.0) + Vector2(0.0, random.randf_range(-120.0, -25.0))
+		var fragment_color := Color("ff9d32") if index % 2 == 0 else Color("5f5660")
+		_add_particle(fragment_velocity, random.randf_range(0.42, 0.78), random.randf_range(3.0, 7.0), fragment_color, Vector2(0.0, 230.0))
+
+
 func _add_particle(velocity: Vector2, life: float, radius: float, color: Color, gravity: Vector2) -> void:
 	particles.append({
 		"position": Vector2.ZERO,
@@ -98,7 +114,7 @@ func _draw() -> void:
 		var alpha: float = clampf(particle.life / particle.max_life, 0.0, 1.0)
 		var color: Color = particle.color
 		color.a = alpha
-		if effect in [Effect.DASH, Effect.SHOULDER] and particle.radius <= 3.8:
+		if effect in [Effect.DASH, Effect.SHOULDER, Effect.BREAKDOWN] and particle.radius <= 4.5:
 			var tail: Vector2 = particle.velocity.normalized() * particle.radius * 4.0
 			draw_line(particle.position, particle.position - tail, color, particle.radius, true)
 		else:
