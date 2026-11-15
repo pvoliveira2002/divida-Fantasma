@@ -82,6 +82,7 @@ func _run() -> void:
 	ranged.position = Vector2(300, 0)
 	ranged.state = 0
 	ranged.start_windup()
+	_assert(ranged.locked_target_position == player.global_position, "A mira da Auditora deve travar a posicao anunciada ao jogador.")
 	ranged._update_character_visual()
 	_assert(ranged_visual.texture == ranged.shoot_texture and ranged_visual.frame % 4 == 0, "A Auditora deve iniciar o disparo com a arma baixa.")
 	ranged.state_time = ranged.windup_duration * 0.45
@@ -95,6 +96,17 @@ func _run() -> void:
 	await physics_frame
 	_assert(ranged_visual.texture == ranged.shoot_texture and ranged_visual.frame % 4 == 3, "O projetil deve coincidir com o quadro de disparo e recuo.")
 	_assert(get_nodes_in_group("enemy_projectile").size() >= 1, "O atirador deve criar um projétil após a sinalização.")
+
+	var sniper_projectile = null
+	for candidate in get_nodes_in_group("enemy_projectile"):
+		if candidate.sniper_bolt:
+			sniper_projectile = candidate
+			break
+	_assert(sniper_projectile != null, "A Auditora deve disparar o projetil especial de sniper.")
+	if sniper_projectile != null:
+		_assert(is_equal_approx(sniper_projectile.speed, sniper_projectile.SNIPER_SPEED), "O tiro de sniper deve usar sua velocidade dedicada.")
+		_assert(not sniper_projectile.get_node("Polygon2D").visible, "O triangulo generico deve ficar oculto no tiro de sniper.")
+	_assert(ranged.shot_flash_left > 0.0, "O disparo da Auditora deve produzir flash e recuo visuais.")
 
 	# Integração real entre projétil e invulnerabilidade da esquiva.
 	var projectile_scene := load("res://scenes/enemy_projectile.tscn") as PackedScene
@@ -123,6 +135,13 @@ func _run() -> void:
 	_assert(not ranged.is_queued_for_deletion(), "A destruicao da Auditora deve permanecer visivel antes da remocao.")
 	await process_frame
 	_assert(not ranged.is_in_group("enemy"), "A Auditora derrotada deve sair do combate apos processar o golpe fatal.")
+	var dropped_fragments := get_nodes_in_group("memory_fragment")
+	_assert(dropped_fragments.size() == 1, "A Auditora derrotada deve soltar um Fragmento de Memoria.")
+	if not dropped_fragments.is_empty():
+		dropped_fragments[0].global_position = player.global_position
+		dropped_fragments[0].age = dropped_fragments[0].DROP_DURATION
+		await process_frame
+	_assert(main.memory_fragments == 1 and "01" in main.memory_fragment_label.text, "A coleta deve atualizar o contador da tentativa.")
 	for _frame in 10:
 		await physics_frame
 	_assert(is_instance_valid(ranged) and absf(ranged_visual.rotation) > 0.01, "A destruicao deve inclinar o corpo da Auditora.")
@@ -143,6 +162,11 @@ func _run() -> void:
 	for _frame in 24:
 		await physics_frame
 	_assert(death_reference.get_ref() == null, "O Executor deve ser removido ao terminar a destruição.")
+
+	main.collect_pending_memory_fragments()
+	main.queue_free()
+	await process_frame
+	await create_timer(0.1).timeout
 
 	if failed:
 		quit(1)

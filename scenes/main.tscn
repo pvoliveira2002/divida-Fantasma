@@ -85,6 +85,9 @@ volume_db = -15.0
 [node name="Result" type="AudioStreamPlayer" parent="Audio"]
 volume_db = -13.0
 
+[node name="MemoryCollect" type="AudioStreamPlayer" parent="Audio"]
+volume_db = -18.0
+
 [node name="Interface" type="CanvasLayer" parent="."]
 
 [node name="Phase" type="Label" parent="Interface"]
@@ -103,7 +106,7 @@ offset_right = 900.0
 offset_bottom = 88.0
 theme_override_colors/font_color = Color(0.78, 0.83, 0.92, 1)
 theme_override_font_sizes/font_size = 17
-text = "Mover: WASD  •  Atacar: clique/Espaço  •  Esquivar: Shift ou Ctrl"
+text = "Mover: WASD  •  Ataque: M1/Espaço  •  Carregar: segure M1  •  Esquiva: Shift/Ctrl"
 
 [node name="Health" type="Label" parent="Interface"]
 offset_left = 24.0
@@ -131,6 +134,15 @@ offset_bottom = 192.0
 theme_override_colors/font_color = Color(0.2, 1, 0.85, 1)
 theme_override_font_sizes/font_size = 16
 text = "PROTOCOLOS  Nenhum instalado"
+
+[node name="MemoryFragments" type="Label" parent="Interface"]
+offset_left = 24.0
+offset_top = 194.0
+offset_right = 500.0
+offset_bottom = 220.0
+theme_override_colors/font_color = Color(0.35, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "FRAGMENTOS DE MEMÓRIA  00"
 
 [node name="BossHUD" type="VBoxContainer" parent="Interface"]
 visible = false

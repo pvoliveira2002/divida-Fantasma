@@ -189,8 +189,19 @@ func take_damage(amount: int, hit_direction := Vector2.ZERO) -> bool:
 	return true
 
 
+func apply_heavy_knockback(hit_direction: Vector2, multiplier: float) -> void:
+	if state == State.DEAD:
+		return
+	var direction := hit_direction.normalized()
+	if direction.is_zero_approx():
+		direction = damage_direction
+	knockback_velocity = direction * knockback_strength * maxf(multiplier, 1.0)
+
+
 func _begin_death() -> void:
 	state = State.DEAD
+	if get_parent().has_method("spawn_memory_fragment"):
+		get_parent().spawn_memory_fragment(global_position)
 	velocity = Vector2.ZERO
 	knockback_velocity = Vector2.ZERO
 	attack_impact_left = 0.0

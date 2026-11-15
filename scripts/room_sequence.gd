@@ -140,6 +140,7 @@ func _transition() -> void:
 		transitioning = false
 		return
 	arena._finish_hit_stop()
+	arena.collect_pending_memory_fragments()
 	arena.protocols.clear_room()
 	_clear_projectiles()
 	for child in arena.get_children():

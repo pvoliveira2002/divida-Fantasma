@@ -38,6 +38,10 @@ func _run() -> void:
 	_assert(collision != null, "A borda direita da arena deve bloquear o personagem.")
 	_assert(player.position.x < 540.0, "O personagem não deve atravessar o limite direito.")
 
+	main.queue_free()
+	await process_frame
+	await create_timer(0.3).timeout
+
 	if Engine.get_meta("phase1_test_failed", false):
 		quit(1)
 	else:

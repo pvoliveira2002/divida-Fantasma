@@ -30,6 +30,8 @@ var state := State.POSITIONING
 var state_time := 0.0
 var target: CharacterBody2D
 var locked_direction := Vector2.LEFT
+var locked_target_position := Vector2.ZERO
+var shot_flash_left := 0.0
 var flash_left := 0.0
 var knockback_velocity := Vector2.ZERO
 @export var knockback_strength := 230.0
@@ -56,6 +58,7 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	flash_left = maxf(flash_left - delta, 0.0)
+	shot_flash_left = maxf(shot_flash_left - delta, 0.0)
 	character_visual.modulate = Color(1.8, 1.8, 1.8, 1.0) if flash_left > 0.0 else Color.WHITE
 	if state == State.DEAD:
 		death_animation_time = minf(death_animation_time + delta, death_animation_duration)
@@ -118,6 +121,7 @@ func start_windup() -> void:
 	state = State.WINDUP
 	state_time = windup_duration
 	locked_direction = (target.global_position - global_position).normalized()
+	locked_target_position = target.global_position
 	facing_direction = locked_direction
 	visual_movement = VisualMovement.IDLE
 	_update_character_visual(0.0)
@@ -133,8 +137,15 @@ func _fire() -> void:
 		return
 	var projectile = projectile_scene.instantiate()
 	get_parent().add_child(projectile)
-	projectile.global_position = global_position + locked_direction * 35.0
+	projectile.enable_sniper_bolt()
+	projectile.global_position = global_position + _muzzle_offset()
 	projectile.setup(locked_direction)
+	shot_flash_left = shot_recoil_duration
+	queue_redraw()
+
+
+func _muzzle_offset() -> Vector2:
+	return Vector2(0.0, -22.0) + locked_direction * 30.0
 
 
 func take_damage(amount: int, hit_direction := Vector2.ZERO) -> bool:
@@ -150,8 +161,19 @@ func take_damage(amount: int, hit_direction := Vector2.ZERO) -> bool:
 	return true
 
 
+func apply_heavy_knockback(hit_direction: Vector2, multiplier: float) -> void:
+	if state == State.DEAD:
+		return
+	var direction := hit_direction.normalized()
+	if direction.is_zero_approx():
+		direction = damage_direction
+	knockback_velocity = direction * knockback_strength * maxf(multiplier, 1.0)
+
+
 func _begin_death() -> void:
 	state = State.DEAD
+	if get_parent().has_method("spawn_memory_fragment"):
+		get_parent().spawn_memory_fragment(global_position)
 	velocity = Vector2.ZERO
 	knockback_velocity = Vector2.ZERO
 	death_animation_time = 0.0
@@ -218,6 +240,10 @@ func _update_character_visual(delta: float = 0.0) -> void:
 	character_visual.scale = VISUAL_BASE_SCALE
 	character_visual.position = VISUAL_BASE_POSITION
 	character_visual.rotation = 0.0
+	if shot_flash_left > 0.0:
+		var recoil_strength := shot_flash_left / maxf(shot_recoil_duration, 0.001)
+		character_visual.position -= locked_direction * 5.0 * recoil_strength
+		character_visual.rotation = -locked_direction.x * 0.08 * recoil_strength
 	if flash_left > 0.0:
 		var damage_strength := clampf(flash_left / 0.12, 0.0, 1.0)
 		character_visual.position -= damage_direction * 5.0 * damage_strength
@@ -252,5 +278,23 @@ func _draw() -> void:
 			var offset := Vector2(death_fall_direction * (8.0 + index * 7.0), -28.0 + index * 13.0)
 			draw_line(offset, offset + Vector2(death_fall_direction * (12.0 + death_progress * 18.0), 0.0), Color(0.94, 0.20, 1.0, glitch_alpha), 3.0, true)
 	if state == State.WINDUP:
-		draw_line(Vector2.ZERO, locked_direction * 360.0, Color(1.0, 0.25, 0.45, 0.65), 4.0, true)
-		draw_circle(Vector2.ZERO, 33.0, Color(1.0, 0.2, 0.5, 0.12))
+		var windup_progress := 1.0 - clampf(state_time / maxf(windup_duration, 0.001), 0.0, 1.0)
+		var focus := smoothstep(0.0, 1.0, windup_progress)
+		var telegraph_muzzle := _muzzle_offset()
+		var target_point := to_local(locked_target_position)
+		draw_line(telegraph_muzzle, target_point, Color(0.16, 0.01, 0.10, 0.82), 7.0, true)
+		draw_line(telegraph_muzzle, target_point, Color(1.0, 0.16, 0.55, 0.30 + focus * 0.62), 1.5 + focus * 1.5, true)
+		var reticle_radius := lerpf(25.0, 11.0, focus)
+		draw_arc(target_point, reticle_radius, 0.0, TAU, 32, Color(1.0, 0.18, 0.55, 0.55 + focus * 0.4), 2.0, true)
+		for index in 4:
+			var marker_direction := Vector2.RIGHT.rotated(float(index) * TAU / 4.0)
+			var marker_start := target_point + marker_direction * (reticle_radius + 4.0)
+			draw_line(marker_start, marker_start + marker_direction * 7.0, Color(0.55, 0.95, 1.0, 0.75 + focus * 0.25), 2.0, true)
+		draw_circle(telegraph_muzzle, 8.0 + focus * 6.0, Color(1.0, 0.08, 0.45, 0.12 + focus * 0.16))
+		draw_circle(telegraph_muzzle, 2.0 + focus * 3.0, Color(0.65, 1.0, 1.0, 0.7 + focus * 0.3))
+	if shot_flash_left > 0.0:
+		var flash_strength := shot_flash_left / maxf(shot_recoil_duration, 0.001)
+		var flash_muzzle := _muzzle_offset()
+		draw_circle(flash_muzzle, 18.0 * flash_strength, Color(1.0, 0.10, 0.48, 0.30 * flash_strength))
+		draw_circle(flash_muzzle, 8.0 * flash_strength, Color(0.72, 1.0, 1.0, 0.9 * flash_strength))
+		draw_line(flash_muzzle, flash_muzzle + locked_direction * 34.0, Color(0.75, 1.0, 1.0, flash_strength), 4.0, true)

@@ -21,6 +21,9 @@ const ROOM_VISUAL_ACCENTS := [
 ]
 const HIT_SPARK_SCENE := preload("res://scenes/hit_spark.tscn")
 const ROOM_SEQUENCE := preload("res://scripts/room_sequence.gd")
+const ARENA_AMBIENCE := preload("res://scripts/arena_ambience.gd")
+const MEMORY_FRAGMENT := preload("res://scripts/memory_fragment.gd")
+const MEMORY_PROGRESS := preload("res://scripts/memory_progress.gd")
 const RUN_UPGRADES := preload("res://scripts/run_upgrades.gd")
 const COMBAT_PROTOCOLS := preload("res://scripts/combat_protocols.gd")
 const GAME_MENU := preload("res://scripts/game_menu.gd")
@@ -34,6 +37,8 @@ const GAME_MENU := preload("res://scripts/game_menu.gd")
 @onready var damage_audio: AudioStreamPlayer = $Audio/Damage
 @onready var dodge_audio: AudioStreamPlayer = $Audio/Dodge
 @onready var result_audio: AudioStreamPlayer = $Audio/Result
+@onready var memory_collect_audio: AudioStreamPlayer = $Audio/MemoryCollect
+@onready var memory_fragment_label: Label = $Interface/MemoryFragments
 
 var run_state := RunState.PLAYING
 var hit_stop_left := 0.0
@@ -42,14 +47,21 @@ var shake_left := 0.0
 var shake_strength := 0.0
 var random := RandomNumberGenerator.new()
 var rooms: Node2D
+var ambience: Node2D
 var upgrades: Control
 var protocols: Node2D
 var menus: CanvasLayer
+var memory_fragments := 0
+var total_memory_fragments := 0
+var memory_drop_sequence := 0
 
 
 func _ready() -> void:
+	total_memory_fragments = MEMORY_PROGRESS.load_total()
 	player.died.connect(_on_player_died)
 	player.attack_landed.connect(_on_attack_landed)
+	player.combo_finisher_landed.connect(_on_combo_finisher_landed)
+	player.heavy_attack_landed.connect(_on_heavy_attack_landed)
 	player.player_damaged.connect(_on_player_damaged)
 	player.dodge_started.connect(_on_dodge_started)
 	hit_audio.stream = _make_tone(190.0, 0.055, 0.45)
@@ -57,10 +69,14 @@ func _ready() -> void:
 	dodge_audio.stream = _make_tone(420.0, 0.075, 0.12)
 	result_audio.stream = _make_tone(620.0, 0.22, 0.0)
 	_update_health_display()
+	_update_memory_fragment_display()
 	rooms = ROOM_SEQUENCE.new()
 	rooms.name = "RoomSequence"
 	rooms.sequence_completed.connect(func(): _end_run(RunState.VICTORY))
 	add_child(rooms)
+	ambience = ARENA_AMBIENCE.new()
+	ambience.name = "ArenaAmbience"
+	add_child(ambience)
 	upgrades = RUN_UPGRADES.new()
 	upgrades.name = "UpgradeChoice"
 	upgrades.arena = self
@@ -78,6 +94,13 @@ func _ready() -> void:
 		GAME_MENU.start_at_boss = false
 		rooms.start_boss_test()
 	queue_redraw()
+
+
+func _exit_tree() -> void:
+	for audio_player in [hit_audio, damage_audio, dodge_audio, result_audio, memory_collect_audio]:
+		if is_instance_valid(audio_player):
+			audio_player.stop()
+			audio_player.stream = null
 
 
 func _process(delta: float) -> void:
@@ -101,9 +124,36 @@ func _on_attack_landed(world_position: Vector2) -> void:
 	var spark = HIT_SPARK_SCENE.instantiate()
 	add_child(spark)
 	spark.global_position = world_position
+	hit_audio.pitch_scale = 1.0
 	hit_audio.play()
 	_start_hit_stop(0.045)
 	_start_camera_shake(1.5, 0.07)
+
+
+func _on_combo_finisher_landed(world_position: Vector2) -> void:
+	var spark = HIT_SPARK_SCENE.instantiate()
+	spark.duration = 0.24
+	spark.ray_color = Color(0.12, 0.92, 1.0, 1.0)
+	spark.core_color = Color(0.78, 1.0, 1.0, 1.0)
+	add_child(spark)
+	spark.global_position = world_position
+	hit_audio.pitch_scale = 1.28
+	hit_audio.play()
+	_start_hit_stop(0.07)
+	_start_camera_shake(3.2, 0.12)
+
+
+func _on_heavy_attack_landed(world_position: Vector2) -> void:
+	var spark = HIT_SPARK_SCENE.instantiate()
+	spark.duration = 0.30
+	spark.ray_color = Color(0.08, 0.72, 1.0, 1.0)
+	spark.core_color = Color(0.82, 1.0, 1.0, 1.0)
+	add_child(spark)
+	spark.global_position = world_position
+	hit_audio.pitch_scale = 0.82
+	hit_audio.play()
+	_start_hit_stop(0.09)
+	_start_camera_shake(4.4, 0.15)
 
 
 func _on_player_damaged() -> void:
@@ -119,6 +169,7 @@ func _end_run(result: RunState) -> void:
 	if run_state != RunState.PLAYING:
 		return
 	run_state = result
+	collect_pending_memory_fragments()
 	_finish_hit_stop()
 	player.controls_enabled = false
 	upgrades.hide()
@@ -134,6 +185,37 @@ func _end_run(result: RunState) -> void:
 		enemy.set_physics_process(false)
 	for projectile in get_tree().get_nodes_in_group("enemy_projectile"):
 		projectile.set_physics_process(false)
+
+
+func spawn_memory_fragment(world_position: Vector2) -> void:
+	if run_state != RunState.PLAYING:
+		return
+	var fragment := MEMORY_FRAGMENT.new()
+	fragment.name = "MemoryFragment"
+	add_child(fragment)
+	fragment.global_position = world_position
+	var scatter_angle := float(memory_drop_sequence) * 2.399963
+	memory_drop_sequence += 1
+	fragment.setup(player, scatter_angle)
+
+
+func collect_memory_fragment(_fragment: Node2D) -> void:
+	memory_fragments += 1
+	total_memory_fragments += 1
+	var save_error := MEMORY_PROGRESS.save_total(total_memory_fragments)
+	if save_error != OK:
+		push_warning("Nao foi possivel salvar os Fragmentos de Memoria: erro %d." % save_error)
+	_update_memory_fragment_display()
+	if memory_collect_audio.stream == null:
+		memory_collect_audio.stream = _make_tone(760.0, 0.12, 0.05)
+	memory_collect_audio.pitch_scale = 0.94 + minf(float(memory_fragments), 8.0) * 0.025
+	memory_collect_audio.play()
+
+
+func collect_pending_memory_fragments() -> void:
+	for fragment in get_tree().get_nodes_in_group("memory_fragment"):
+		if is_ancestor_of(fragment) and fragment.has_method("collect"):
+			fragment.collect()
 
 
 func _start_hit_stop(duration: float) -> void:
@@ -202,6 +284,10 @@ func _update_health_display() -> void:
 	var filled := "◆".repeat(player.current_health)
 	var empty := "◇".repeat(player.max_health - player.current_health)
 	health_label.text = "MEMÓRIA  %s%s" % [filled, empty]
+
+
+func _update_memory_fragment_display() -> void:
+	memory_fragment_label.text = "FRAGMENTOS  TENTATIVA %02d  ·  RECUPERADOS %03d" % [memory_fragments, total_memory_fragments]
 
 
 func _draw() -> void:
